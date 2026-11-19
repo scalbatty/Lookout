@@ -14,7 +14,12 @@ Requires Xcode 27 (the project uses the new `project.xcproj` format) and iOS 17+
 2. Set `UNSPLASH_ACCESS_KEY` to your Unsplash **Access Key** (not the Secret Key).
 3. Open `Lookout.xcodeproj`, select your signing team, and run the `Lookout` scheme.
 
-Tests: run the `LookoutKit-Package` scheme on an iOS Simulator (⌘U).
+Tests (all logic lives in the `LookoutKit` package): open `Packages/LookoutKit` in Xcode and press ⌘U on an iOS Simulator, or from the command line:
+
+```bash
+cd Packages/LookoutKit
+xcodebuild test -scheme LookoutKit-Package -destination 'platform=iOS Simulator,name=iPhone 17'
+```
 
 ## Note about AI Usage
 

@@ -44,6 +44,15 @@ struct UnsplashPhotoRepositoryTests {
         _ = try await repository(http).searchPhotos(matching: tigers, page: 1)
     }
 
+    @Test func searchQueryEncodesPlusSigns() async throws {
+        let body = Data(#"{"total":0,"total_pages":0,"results":[]}"#.utf8)
+        let http = StubHTTPClient.responding(body: body) { request in
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.percentEncodedQuery ?? ""
+            #expect(query.contains("query=c%2B%2B%20%26%20a%3Db"))
+        }
+        _ = try await repository(http).searchPhotos(matching: SearchQuery("c++ & a=b")!, page: 1)
+    }
+
     // MARK: Pages
 
     @Test func feedPageFromRecordedResponse() async throws {

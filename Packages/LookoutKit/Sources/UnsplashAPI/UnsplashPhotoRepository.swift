@@ -78,6 +78,10 @@ public struct UnsplashPhotoRepository: PhotoRepository {
             QueryParameter.page.item(String(page)),
             QueryParameter.perPage.item(String(perPage)),
         ]
+        // URLComponents leaves "+" as-is (valid per RFC 3986), but the server
+        // decodes it as a space, form-style. Apple's documented workaround:
+        components.percentEncodedQuery = components.percentEncodedQuery?
+            .replacingOccurrences(of: "+", with: "%2B")
         var request = URLRequest(url: components.url!)
         request.setValue("Client-ID \(accessKey)", forHTTPHeaderField: "Authorization")
         request.setValue("v1", forHTTPHeaderField: "Accept-Version")

@@ -1,0 +1,10 @@
+// Base build configuration for the Lookout app target.
+//
+// Secrets are kept out of version control: copy Secrets.example.xcconfig
+// to Secrets.xcconfig (gitignored) and fill in your Unsplash Access Key.
+// The optional include keeps fresh clones building without it; the app
+// then reports the missing key at launch instead of failing to compile.
+
+UNSPLASH_ACCESS_KEY =
+
+#include? "Secrets.xcconfig"

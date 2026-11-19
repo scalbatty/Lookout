@@ -1,8 +1,8 @@
 {
   "default-configuration": "Release",
   "configurations": [
-    "Debug",
-    "Release",
+    { "name": "Debug", "file": "Config/Lookout.xcconfig" },
+    { "name": "Release", "file": "Config/Lookout.xcconfig" },
   ],
   "localizations": {
     "development": "en",
@@ -17,6 +17,13 @@
     },
   ],
   "files": [
+    {
+      "kind": "group",
+      "path": "Config",
+      "children": [
+        { "path": "Lookout.xcconfig" },
+      ],
+    },
     { "kind": "folder", "path": "Lookout", "target-membership": [ "Lookout" ] },
     {
       "kind": "group",
@@ -42,10 +49,10 @@
           "product-name": "GalleryFeature",
           "build-phase": { "build-phase": "frameworks" },
         }, {
-          "product-name": "UnsplashAPI",
+          "product-name": "ImagePipeline",
           "build-phase": { "build-phase": "frameworks" },
         }, {
-          "product-name": "ImagePipeline",
+          "product-name": "UnsplashAPI",
           "build-phase": { "build-phase": "frameworks" },
         },
       ],
@@ -56,6 +63,7 @@
         "ENABLE_PREVIEWS": "YES",
         "ENABLE_USER_SELECTED_FILES": "readonly",
         "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_FILE": "Config/Info.plist",
         "INFOPLIST_KEY_CFBundleDisplayName": "Lookout",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]": "YES",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]": "YES",

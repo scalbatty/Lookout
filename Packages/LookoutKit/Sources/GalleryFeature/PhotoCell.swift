@@ -79,7 +79,7 @@ struct PhotoCell: View {
     }
 
     private var accessibilityText: Text {
-        photo.isSponsored ? captionText + Text(", ") + Text(localized("cell.sponsored")) : captionText
+        photo.isSponsored ? captionText + Text(verbatim: ", ") + Text(localized("cell.sponsored")) : captionText
     }
 
     private func loadImage() async {

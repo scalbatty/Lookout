@@ -55,7 +55,13 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     } footer: {
                         // Inside the lazy grid on purpose: only lazy containers wait
                         // until a view nears the screen before calling `onAppear`.
-                        PhotoGridFooter(footer: footer, loadMore: model.footerAppeared, retry: model.retry)
+                        PhotoGridFooter(
+                            footer: footer,
+                            cellSide: cellSide,
+                            spacing: spacing,
+                            loadMore: model.footerAppeared,
+                            retry: model.retry
+                        )
                     }
                 }
                 .padding(spacing)
@@ -67,9 +73,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
         ScrollView {
             LazyVGrid(columns: columns(cellSide: cellSide), spacing: spacing) {
                 ForEach(0..<12, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(.quaternary)
-                        .frame(width: cellSide, height: cellSide)
+                    PlaceholderTile(side: cellSide)
                 }
             }
             .padding(spacing)
@@ -92,38 +96,55 @@ public struct PhotoGrid<EmptyContent: View>: View {
 /// the next page.
 private struct PhotoGridFooter: View {
     let footer: PhotoGridState.Footer
+    let cellSide: CGFloat
+    let spacing: CGFloat
     let loadMore: () -> Void
     let retry: () -> Void
 
     var body: some View {
-        Group {
-            switch footer {
-            case .none:
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear(perform: loadMore)
-            case .loading:
-                ProgressView()
-            case .failed(let error):
-                VStack(spacing: 8) {
-                    Text(error.message)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    if error.isRetryable {
-                        Button(action: retry) { Text(localized("grid.retry")) }
-                            .buttonStyle(.bordered)
-                    }
-                }
-            case .end:
-                Text(localized("grid.end"))
+        switch footer {
+        case .none:
+            Color.clear
+                .frame(height: 1)
+                .onAppear(perform: loadMore)
+        case .loading:
+            // The grid seems to continue while the next page loads.
+            HStack(spacing: spacing) {
+                PlaceholderTile(side: cellSide)
+                PlaceholderTile(side: cellSide)
+            }
+            .accessibilityHidden(true)
+        case .failed(let error):
+            VStack(spacing: 8) {
+                Text(error.message)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                if error.isRetryable {
+                    Button(action: retry) { Text(localized("grid.retry")) }
+                        .buttonStyle(.bordered)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding()
+        case .end:
+            Text(localized("grid.end"))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, footer == .none ? 0 : 16)
-        .padding(.horizontal)
+    }
+}
+
+/// Stands in for a photo cell while photos load.
+struct PlaceholderTile: View {
+    let side: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(.quaternary)
+            .frame(width: side, height: side)
     }
 }
 

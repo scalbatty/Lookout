@@ -34,6 +34,8 @@ Here are the decisions made for the project as I went, some might go back on pre
 	- The app target wires the concrete pieces together as a composition root. Dependency rules live in `Package.swift`, so the compiler enforces them.
 - I'm unsure about how SwiftUI will do with scrolling smoothness and performance but the brief insists on using SwiftUI as a default so I'll focus on writing a strong foundation with a SwiftUI view hierarchy first, then measure and see if I need to move to UICollectionView + custom UINavigationController transition for better results.
 - Decided to hardcode the image variant widths in the Unsplash API code instead of checking the get parameters every time. Could be done later though.
-- Sponsored content is displayed and clearly labeled as such
+- Sponsored content is displayed and clearly labeled as such. Later we can add the sponsor's name and a link to their campaign URL if needed.
 - Using page number instead of opaque cursor for pagination, as the brief indicates the page number in the API call example
+- Using a RawRepresentable for the Photo ID to avoid String mixups.
+- 
 

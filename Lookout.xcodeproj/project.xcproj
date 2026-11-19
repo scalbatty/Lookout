@@ -10,6 +10,12 @@
       "Base",
     ],
   },
+  "packages": [
+    {
+      "kind": "local",
+      "path": "Packages/LookoutKit",
+    },
+  ],
   "files": [
     { "kind": "folder", "path": "Lookout", "target-membership": [ "Lookout" ] },
     {
@@ -30,6 +36,18 @@
         "compile-sources",
         "frameworks",
         "resources",
+      ],
+      "package-product-members": [
+        {
+          "product-name": "GalleryFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "product-name": "UnsplashAPI",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "product-name": "ImagePipeline",
+          "build-phase": { "build-phase": "frameworks" },
+        },
       ],
       "build-settings": {
         "CODE_SIGN_STYLE": "Automatic",

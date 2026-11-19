@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Xcode per-user state
+xcuserdata/
+*.xcuserstate
+
+# Build output
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local secrets (Unsplash access key) — see Secrets.example.xcconfig
+Secrets.xcconfig

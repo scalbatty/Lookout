@@ -25,6 +25,42 @@
         }
       }
     },
+    "feed.empty.message": {
+      "comment": "Message shown when the editorial feed has no photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The editorial feed is empty right now. Check back later."
+          }
+        }
+      }
+    },
+    "feed.empty.title": {
+      "comment": "Title shown when the editorial feed has no photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos"
+          }
+        }
+      }
+    },
+    "feed.title": {
+      "comment": "Navigation title of the editorial feed.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editorial"
+          }
+        }
+      }
+    },
     "grid.end": {
       "comment": "Shown below the last photo when there are no more results.",
       "extractionState": "manual",

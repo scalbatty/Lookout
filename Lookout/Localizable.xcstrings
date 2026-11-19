@@ -1,0 +1,30 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "missingKey.message": {
+      "comment": "Developer-facing setup instructions shown when the access key is missing.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Config/Secrets.example.xcconfig to Config/Secrets.xcconfig, set your Unsplash Access Key, and run the app again."
+          }
+        }
+      }
+    },
+    "missingKey.title": {
+      "comment": "Title shown when the app was built without an Unsplash Access Key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsplash key missing"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -35,7 +35,7 @@ let package = Package(
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
         .testTarget(name: "ImageLoadingTests", dependencies: ["ImageLoading"]),
-        .testTarget(name: "GalleryFeatureTests", dependencies: ["GalleryFeature", "Domain"]),
+        .testTarget(name: "GalleryFeatureTests", dependencies: ["GalleryFeature", "Domain", "ImageLoading"]),
         .testTarget(
             name: "UnsplashAPITests",
             dependencies: ["UnsplashAPI", "Domain"],

@@ -1,6 +1,30 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "cell.caption.placeholder": {
+      "comment": "Shown in a grid cell when the photo has no description.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled photo"
+          }
+        }
+      }
+    },
+    "cell.sponsored": {
+      "comment": "Badge on photos that are paid placements.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sponsored"
+          }
+        }
+      }
+    },
     "grid.error.generic": {
       "comment": "Grid error: any other failure.",
       "extractionState": "manual",

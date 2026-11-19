@@ -10,22 +10,18 @@ public struct PhotoGridError: Equatable, Sendable {
     init(_ error: DomainError) {
         switch error {
         case .offline:
-            message = Self.text("grid.error.offline")
+            message = localized("grid.error.offline")
             isRetryable = true
         case .rateLimited:
-            message = Self.text("grid.error.rateLimited")
+            message = localized("grid.error.rateLimited")
             isRetryable = true
         case .unauthorized:
             // A configuration problem: retrying can't fix it.
-            message = Self.text("grid.error.unauthorized")
+            message = localized("grid.error.unauthorized")
             isRetryable = false
         case .unexpectedStatus, .invalidResponse:
-            message = Self.text("grid.error.generic")
+            message = localized("grid.error.generic")
             isRetryable = true
         }
-    }
-
-    private static func text(_ key: String.LocalizationValue) -> LocalizedStringResource {
-        LocalizedStringResource(key, bundle: .atURL(Bundle.module.bundleURL))
     }
 }

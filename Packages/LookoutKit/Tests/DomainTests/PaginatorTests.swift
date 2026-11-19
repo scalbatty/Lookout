@@ -48,6 +48,20 @@ struct PaginatorTests {
         #expect(paginator.phase == .loaded(hasMore: false))
     }
 
+    @Test func skipsPhotosAlreadyLoaded() async {
+        // "b" moved from page 1 to page 2 because a new photo was published meanwhile.
+        let source = ScriptedPages([
+            .success(page(["a", "b"], hasMore: true)),
+            .success(page(["b", "c"], hasMore: true)),
+        ])
+        let paginator = Paginator(loadPage: source.load)
+
+        await paginator.loadNextPage()
+        await paginator.loadNextPage()
+
+        #expect(paginator.items.map(\.id) == ["a", "b", "c"])
+    }
+
     // MARK: No duplicated requests
 
     @Test func ignoresCallsWhileALoadIsInFlight() async {

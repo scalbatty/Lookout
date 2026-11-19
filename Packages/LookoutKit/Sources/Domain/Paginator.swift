@@ -23,6 +23,9 @@ public final class Paginator {
     public private(set) var phase: Phase = .idle
 
     private var nextPage = 1
+    /// IDs already in `items`. Feeds ordered by date shift while the user
+    /// scrolls, so a photo can show up again on the next page.
+    private var loadedIDs: Set<PhotoID> = []
     private let loadPage: @Sendable (Int) async throws -> Page<Photo>
 
     public init(loadPage: @escaping @Sendable (Int) async throws -> Page<Photo>) {
@@ -45,7 +48,8 @@ public final class Paginator {
 
         do {
             let result = try await loadPage(pageToLoad)
-            items.append(contentsOf: result.items)
+            let newItems = result.items.filter { loadedIDs.insert($0.id).inserted }
+            items.append(contentsOf: newItems)
             nextPage += 1
             phase = .loaded(hasMore: result.hasMore)
         } catch is CancellationError {

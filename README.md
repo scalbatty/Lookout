@@ -42,5 +42,7 @@ Here are the decisions made for the project as I went, some might go back on pre
 - Sponsored content is displayed and clearly labeled as such. Later we can add the sponsor's name and a link to their campaign URL if needed.
 - Using page number instead of opaque cursor for pagination, as the brief indicates the page number in the API call example
 - Using a RawRepresentable for the Photo ID to avoid String mixups.
-- 
+- Using a seam for HTTP Calls so the unsplash repository code can be tested
+- UnsplashRepository can be a structure as it has no mutable state
+- Ignoring duplicate photo IDs in list calls for now
 

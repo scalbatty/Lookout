@@ -19,8 +19,15 @@ struct PhotoCell: View {
     /// cache evicts it meanwhile.
     @State private var image: UIImage?
 
+    /// Grid images are loaded at most at 2× even on 3× screens: at cell size
+    /// the difference is hard to see, while each image takes ~2.25× less
+    /// memory and uses a smaller download (`small` instead of `regular`).
+    /// The full-screen view keeps the screen's real scale.
+    static let maxImageScale: CGFloat = 2
+
     private var imageRequest: ImageRequest? {
-        photo.imageRequest(fillingSquareOf: Int((side * displayScale).rounded(.up)))
+        let scale = min(displayScale, Self.maxImageScale)
+        return photo.imageRequest(fillingSquareOf: Int((side * scale).rounded(.up)))
     }
 
     /// An image already in memory is shown in the cell's very first frame,

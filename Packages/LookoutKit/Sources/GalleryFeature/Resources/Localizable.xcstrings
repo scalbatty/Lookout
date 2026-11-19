@@ -1,0 +1,54 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "grid.error.generic": {
+      "comment": "Grid error: any other failure.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong. Please try again."
+          }
+        }
+      }
+    },
+    "grid.error.offline": {
+      "comment": "Grid error: no network connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "grid.error.rateLimited": {
+      "comment": "Grid error: the photo service's hourly request quota is used up.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many requests right now. Please try again in a few minutes."
+          }
+        }
+      }
+    },
+    "grid.error.unauthorized": {
+      "comment": "Grid error: the API access key was rejected. Retrying won't help.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't connect to Unsplash. The access key seems to be invalid."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

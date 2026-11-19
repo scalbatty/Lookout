@@ -13,6 +13,7 @@ import PackageDescription
 
 let package = Package(
     name: "LookoutKit",
+    defaultLocalization: "en",
     platforms: [.iOS(.v17)],
     products: [
         .library(name: "Domain", targets: ["Domain"]),
@@ -26,10 +27,15 @@ let package = Package(
         .target(name: "ImageLoading"),
         .target(name: "ImagePipeline", dependencies: ["ImageLoading"]),
         .target(name: "UnsplashAPI", dependencies: ["Domain"]),
-        .target(name: "GalleryFeature", dependencies: ["Domain", "ImageLoading"]),
+        .target(
+            name: "GalleryFeature",
+            dependencies: ["Domain", "ImageLoading"],
+            resources: [.process("Resources")]
+        ),
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
         .testTarget(name: "ImageLoadingTests", dependencies: ["ImageLoading"]),
+        .testTarget(name: "GalleryFeatureTests", dependencies: ["GalleryFeature", "Domain"]),
         .testTarget(
             name: "UnsplashAPITests",
             dependencies: ["UnsplashAPI", "Domain"],

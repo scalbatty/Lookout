@@ -45,4 +45,5 @@ Here are the decisions made for the project as I went, some might go back on pre
 - Using a seam for HTTP Calls so the unsplash repository code can be tested
 - UnsplashRepository can be a structure as it has no mutable state
 - Ignoring duplicate photo IDs in list calls for now
+- PhotoGridModel holds the logic so the view can be simpler, handling a defined set of states
 

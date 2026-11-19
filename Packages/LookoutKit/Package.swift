@@ -29,5 +29,10 @@ let package = Package(
         .target(name: "GalleryFeature", dependencies: ["Domain", "ImageLoading"]),
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
+        .testTarget(
+            name: "UnsplashAPITests",
+            dependencies: ["UnsplashAPI", "Domain"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )

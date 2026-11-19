@@ -49,6 +49,15 @@ struct PhotoDetailView: View {
         Rectangle()
             .fill(.white.opacity(0.08))
             .overlay {
+                // Whatever is already in memory (usually the grid thumbnail)
+                // shows at once; the full image cross-fades over it.
+                if let placeholder = imageLoader.largestCachedImage(forAnyOf: photo.variants.map(\.url)) {
+                    Image(uiImage: placeholder)
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .overlay {
                 if let image {
                     Image(uiImage: image)
                         .resizable()

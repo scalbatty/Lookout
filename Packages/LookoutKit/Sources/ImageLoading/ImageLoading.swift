@@ -20,4 +20,19 @@ public struct ImageRequest: Hashable, Sendable {
 /// and throw `CancellationError`.
 public protocol ImageLoading: Sendable {
     func image(for request: ImageRequest) async throws -> UIImage
+
+    /// The image for `request` if it's already in memory, without waiting.
+    /// Views call it while rendering, so it must be cheap.
+    func cachedImage(for request: ImageRequest) -> UIImage?
+
+    /// The largest image already in memory for any of `urls`, at whatever
+    /// size it was loaded. Lets a view show what's available (e.g. the grid
+    /// thumbnail) while a larger size loads.
+    func largestCachedImage(forAnyOf urls: [URL]) -> UIImage?
+}
+
+extension ImageLoading {
+    /// Loaders without a cache never have anything in memory.
+    public func cachedImage(for request: ImageRequest) -> UIImage? { nil }
+    public func largestCachedImage(forAnyOf urls: [URL]) -> UIImage? { nil }
 }

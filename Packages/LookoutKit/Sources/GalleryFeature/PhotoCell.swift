@@ -15,18 +15,26 @@ struct PhotoCell: View {
     let imageLoader: any ImageLoading
 
     @Environment(\.displayScale) private var displayScale
+    /// Holds the image while the cell is on screen, so it stays even if the
+    /// cache evicts it meanwhile.
     @State private var image: UIImage?
 
     private var imageRequest: ImageRequest? {
         photo.imageRequest(fillingSquareOf: Int((side * displayScale).rounded(.up)))
     }
 
+    /// An image already in memory is shown in the cell's very first frame,
+    /// with no placeholder and no fade.
+    private var displayedImage: UIImage? {
+        image ?? imageRequest.flatMap(imageLoader.cachedImage(for:))
+    }
+
     var body: some View {
         Rectangle()
             .fill(.quaternary)
             .overlay {
-                if let image {
-                    Image(uiImage: image)
+                if let displayedImage {
+                    Image(uiImage: displayedImage)
                         .resizable()
                         .scaledToFill()
                         .transition(.opacity)
@@ -36,7 +44,8 @@ struct PhotoCell: View {
             .overlay(alignment: .topLeading) { sponsoredBadge }
             .frame(width: side, height: side)
             .clipShape(.tile)
-            .animation(.easeOut(duration: 0.2), value: image != nil)
+            // Only images that arrive after the first frame fade in.
+            .animation(.easeOut(duration: 0.2), value: displayedImage != nil)
             .task(id: imageRequest) { await loadImage() }
             .onDisappear { image = nil }
             .accessibilityElement(children: .ignore)
@@ -84,6 +93,10 @@ struct PhotoCell: View {
 
     private func loadImage() async {
         guard let imageRequest else { return }
+        if let cached = imageLoader.cachedImage(for: imageRequest) {
+            image = cached
+            return
+        }
         // Failures and cancellation leave the placeholder in place.
         let loaded = try? await imageLoader.image(for: imageRequest)
         // The cell may have left the screen meanwhile: don't hold on to the image.

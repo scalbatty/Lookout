@@ -2,12 +2,9 @@ import Foundation
 import ImageLoading
 import UIKit
 
-/// Deliberately naive `ImageLoading`: one download per request, decoded at
-/// full size, nothing cached beyond `URLSession`'s default behaviour.
-///
-/// It's the measured "before" for the image pipeline: each improvement
-/// (downsampling, memory cache, request deduplication, prefetching) will
-/// replace a piece of it, with Instruments numbers in the commit.
+/// `ImageLoading` over `URLSession`: one download per request, decoded off
+/// the main thread at the size it will be displayed at. Nothing is cached
+/// beyond `URLSession`'s default behaviour yet.
 public struct URLSessionImageLoader: ImageLoading {
     private let session: URLSession
 
@@ -15,10 +12,12 @@ public struct URLSessionImageLoader: ImageLoading {
         self.session = session
     }
 
+    /// `@concurrent`: downloading and decoding never run on the caller's
+    /// actor (the main actor, from views).
+    @concurrent
     public func image(for request: ImageRequest) async throws -> UIImage {
-        // `request.maxPixelSize` is ignored on purpose here: no downsampling yet.
         let (data, _) = try await session.data(from: request.url)
-        guard let image = UIImage(data: data) else { throw URLError(.cannotDecodeContentData) }
-        return image
+        try Task.checkCancellation()
+        return try ImageDecoder.downsample(data, maxPixelSize: request.maxPixelSize)
     }
 }

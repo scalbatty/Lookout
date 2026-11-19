@@ -37,6 +37,24 @@ struct PhotoImageRequestTests {
         #expect(request?.url.lastPathComponent == "1080")
     }
 
+    @Test func landscapeFittedInAPortraitScreenFillsTheWidth() {
+        // 4:3 in a 1200×2600 px screen: 1200×900.
+        let request = photo(width: 4000, height: 3000).imageRequest(fitting: CGSize(width: 1200, height: 2600))
+        #expect(request?.maxPixelSize == 1200)
+        #expect(request?.url.lastPathComponent == "1080") // largest available
+    }
+
+    @Test func tallPortraitFittedInAScreenFillsTheHeight() {
+        // 1:4 in a 1200×2600 px screen: 650×2600.
+        let request = photo(width: 1000, height: 4000).imageRequest(fitting: CGSize(width: 1200, height: 2600))
+        #expect(request?.maxPixelSize == 2600)
+        #expect(request?.url.lastPathComponent == "1080")
+    }
+
+    @Test func emptyBoxMeansNoRequest() {
+        #expect(photo(width: 1, height: 1).imageRequest(fitting: .zero) == nil)
+    }
+
     @Test func noVariantsMeansNoRequest() {
         let bare = Photo(id: "p", caption: nil, width: 1, height: 1, variants: [])
         #expect(bare.imageRequest(fillingSquareOf: 400) == nil)

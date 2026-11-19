@@ -1,3 +1,4 @@
+import CoreGraphics
 import Domain
 import ImageLoading
 
@@ -17,5 +18,16 @@ extension Photo {
         let neededWidth = aspectRatio >= 1 ? longEdge : side
         guard let variant = bestVariant(forPixelWidth: neededWidth) else { return nil }
         return ImageRequest(url: variant.url, maxPixelSize: longEdge)
+    }
+
+    /// The request for showing this photo whole, fitted inside a box of
+    /// `size` pixels.
+    func imageRequest(fitting size: CGSize) -> ImageRequest? {
+        guard size.width > 0, size.height > 0 else { return nil }
+        let fitsWidth = aspectRatio >= Double(size.width / size.height)
+        let width = fitsWidth ? Double(size.width) : Double(size.height) * aspectRatio
+        let height = fitsWidth ? Double(size.width) / aspectRatio : Double(size.height)
+        guard let variant = bestVariant(forPixelWidth: Int(width.rounded(.up))) else { return nil }
+        return ImageRequest(url: variant.url, maxPixelSize: Int(max(width, height).rounded(.up)))
     }
 }

@@ -35,7 +35,7 @@ struct PhotoCell: View {
             .overlay(alignment: .bottomLeading) { caption }
             .overlay(alignment: .topLeading) { sponsoredBadge }
             .frame(width: side, height: side)
-            .clipShape(.rect(cornerRadius: 8, style: .continuous))
+            .clipShape(.tile)
             .animation(.easeOut(duration: 0.2), value: image != nil)
             .task(id: imageRequest) { await loadImage() }
             .onDisappear { image = nil }

@@ -8,6 +8,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
     private let model: PhotoGridModel
     private let imageLoader: any ImageLoading
     private let onSelect: (Photo) -> Void
+    private let transitionNamespace: Namespace.ID?
     private let emptyContent: EmptyContent
 
     private let spacing: CGFloat = 8
@@ -16,11 +17,13 @@ public struct PhotoGrid<EmptyContent: View>: View {
         model: PhotoGridModel,
         imageLoader: any ImageLoading,
         onSelect: @escaping (Photo) -> Void,
+        transitionNamespace: Namespace.ID? = nil,
         @ViewBuilder emptyContent: () -> EmptyContent
     ) {
         self.model = model
         self.imageLoader = imageLoader
         self.onSelect = onSelect
+        self.transitionNamespace = transitionNamespace
         self.emptyContent = emptyContent()
     }
 
@@ -48,8 +51,9 @@ public struct PhotoGrid<EmptyContent: View>: View {
                         ForEach(photos) { photo in
                             Button { onSelect(photo) } label: {
                                 PhotoCell(photo: photo, side: cellSide, imageLoader: imageLoader)
+                                    .zoomTransitionSource(id: photo.id, in: transitionNamespace)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(PressableCellStyle())
                             .onAppear { model.itemAppeared(photo.id) }
                         }
                     } footer: {
@@ -142,8 +146,9 @@ struct PlaceholderTile: View {
     let side: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
+        Rectangle()
             .fill(.quaternary)
+            .clipShape(.tile)
             .frame(width: side, height: side)
     }
 }

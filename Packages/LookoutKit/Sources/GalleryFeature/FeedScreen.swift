@@ -5,6 +5,8 @@ import SwiftUI
 /// The editorial feed: an endless grid of photos.
 public struct FeedScreen: View {
     @State private var model: PhotoGridModel
+    @State private var path: [Photo] = []
+    @Namespace private var zoomNamespace
     private let imageLoader: any ImageLoading
 
     public init(repository: any PhotoRepository, imageLoader: any ImageLoading) {
@@ -15,8 +17,13 @@ public struct FeedScreen: View {
     }
 
     public var body: some View {
-        NavigationStack {
-            PhotoGrid(model: model, imageLoader: imageLoader, onSelect: { _ in }) {
+        NavigationStack(path: $path) {
+            PhotoGrid(
+                model: model,
+                imageLoader: imageLoader,
+                onSelect: { path.append($0) },
+                transitionNamespace: zoomNamespace
+            ) {
                 ContentUnavailableView {
                     Label { Text(localized("feed.empty.title")) } icon: { Image(systemName: "photo.on.rectangle") }
                 } description: {
@@ -24,6 +31,10 @@ public struct FeedScreen: View {
                 }
             }
             .navigationTitle(Text(localized("feed.title")))
+            .navigationDestination(for: Photo.self) { photo in
+                PhotoDetailView(photo: photo, imageLoader: imageLoader)
+                    .zoomTransitionDestination(id: photo.id, in: zoomNamespace)
+            }
         }
     }
 }

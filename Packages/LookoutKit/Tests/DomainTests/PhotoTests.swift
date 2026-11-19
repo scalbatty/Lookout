@@ -23,6 +23,16 @@ struct PhotoTests {
         #expect(photo.bestVariant(forPixelWidth: requested)?.pixelWidth == expected)
     }
 
+    /// Unsplash's `regular` and `full` can share a width (a 1080 px wide
+    /// original). Same picks as the previous sort-based version.
+    @Test func equalWidthsResolveLikeAStableSort() {
+        let first = ImageVariant(url: URL(string: "https://example.com/first.jpg")!, pixelWidth: 1080)
+        let second = ImageVariant(url: URL(string: "https://example.com/second.jpg")!, pixelWidth: 1080)
+        let photo = Photo(id: "id", caption: nil, width: 1080, height: 1080, variants: [first, second])
+        #expect(photo.bestVariant(forPixelWidth: 500) == first)   // smallest sufficient: first of equals
+        #expect(photo.bestVariant(forPixelWidth: 2000) == second) // largest fallback: last of equals
+    }
+
     @Test func bestVariantIsNilWithoutVariants() {
         #expect(photo().bestVariant(forPixelWidth: 400) == nil)
     }

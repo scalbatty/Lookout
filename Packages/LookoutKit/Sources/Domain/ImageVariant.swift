@@ -14,8 +14,22 @@ public struct ImageVariant: Hashable, Sendable {
 extension Photo {
     /// The smallest variant at least `pixelWidth` wide, or the largest one
     /// if none is wide enough. `nil` only when the photo has no variants.
+    ///
+    /// A single pass without allocating: views call this while rendering.
+    /// Among equal widths, the first variant wins for "smallest sufficient"
+    /// and the last for "largest", as a stable sort would pick them.
     public func bestVariant(forPixelWidth pixelWidth: Int) -> ImageVariant? {
-        let byWidth = variants.sorted { $0.pixelWidth < $1.pixelWidth }
-        return byWidth.first { $0.pixelWidth >= pixelWidth } ?? byWidth.last
+        var smallestSufficient: ImageVariant?
+        var largest: ImageVariant?
+        for variant in variants {
+            if variant.pixelWidth >= pixelWidth,
+               variant.pixelWidth < (smallestSufficient?.pixelWidth ?? .max) {
+                smallestSufficient = variant
+            }
+            if variant.pixelWidth >= (largest?.pixelWidth ?? .min) {
+                largest = variant
+            }
+        }
+        return smallestSufficient ?? largest
     }
 }

@@ -25,6 +25,18 @@
         }
       }
     },
+    "grid.end": {
+      "comment": "Shown below the last photo when there are no more results.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's everything"
+          }
+        }
+      }
+    },
     "grid.error.generic": {
       "comment": "Grid error: any other failure.",
       "extractionState": "manual",
@@ -61,6 +73,18 @@
         }
       }
     },
+    "grid.error.title": {
+      "comment": "Title of the full-screen error when the first page of photos fails.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load photos"
+          }
+        }
+      }
+    },
     "grid.error.unauthorized": {
       "comment": "Grid error: the API access key was rejected. Retrying won't help.",
       "extractionState": "manual",
@@ -69,6 +93,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't connect to Unsplash. The access key seems to be invalid."
+          }
+        }
+      }
+    },
+    "grid.retry": {
+      "comment": "Button retrying a failed photo load.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
           }
         }
       }

@@ -60,6 +60,14 @@ public final class PhotoGridModel {
         load()
     }
 
+    /// Called when the row below the photos becomes visible. Covers what
+    /// `itemAppeared` can't: the end of the list already on screen when a
+    /// page finishes (large screens, or a page that only held duplicates).
+    public func footerAppeared() {
+        guard paginator.phase == .loaded(hasMore: true) else { return }
+        load()
+    }
+
     public func retry() {
         guard case .failed = paginator.phase else { return }
         load()

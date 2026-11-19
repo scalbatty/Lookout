@@ -18,6 +18,23 @@ enum PreviewPhotos {
 
     static let all = [landscape, portrait, noCaption, sponsored, longCaption]
 
+    /// A page of 10 photos with IDs unique to that page, for endless previews.
+    static func page(_ number: Int) -> [Photo] {
+        (0..<10).map { index in
+            let base = all[index % all.count]
+            return Photo(
+                id: PhotoID(rawValue: "\(base.id.rawValue)-\(number)-\(index)"),
+                caption: base.caption,
+                width: base.width,
+                height: base.height,
+                variants: base.variants.map {
+                    ImageVariant(url: $0.url.appending(queryItems: [URLQueryItem(name: "p", value: "\(number)-\(index)")]), pixelWidth: $0.pixelWidth)
+                },
+                isSponsored: base.isSponsored
+            )
+        }
+    }
+
     private static func make(_ id: PhotoID, caption: String?, width: Int, height: Int, isSponsored: Bool = false) -> Photo {
         let variants = [200, 400, 1080, width].map {
             ImageVariant(url: URL(string: "https://example.com/\(id.rawValue)/\($0).jpg")!, pixelWidth: $0)

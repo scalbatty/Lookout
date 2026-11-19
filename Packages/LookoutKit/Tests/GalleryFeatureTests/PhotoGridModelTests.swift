@@ -42,6 +42,29 @@ struct PhotoGridModelTests {
         #expect(await source.requestedPages == [1])
     }
 
+    @Test func footerAppearingLoadsNextPage() async {
+        let source = PageSource(pages: [ids("a"), ids("b")])
+        let model = PhotoGridModel(loadPage: source.load)
+        model.start()
+        await model.loadTask?.value
+
+        model.footerAppeared()
+        await model.loadTask?.value
+
+        #expect(await source.requestedPages == [1, 2])
+    }
+
+    @Test func footerAppearingDuringALoadDoesNothing() async {
+        let source = PageSource(pages: [ids("a")])
+        let model = PhotoGridModel(loadPage: source.load)
+
+        model.start()
+        model.footerAppeared()
+        await model.loadTask?.value
+
+        #expect(await source.requestedPages == [1])
+    }
+
     @Test func noLoadAfterLastPage() async {
         let source = PageSource(pages: [ids("a")], hasMore: false)
         let model = PhotoGridModel(loadPage: source.load)

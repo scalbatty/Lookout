@@ -65,3 +65,14 @@ struct URLSessionImageLoaderTests {
         #expect(image.cgImage?.height == 150)
     }
 }
+
+struct DiskCachedSessionTests {
+    @Test func keepsDownloadsOnDiskAndReusesThem() {
+        let session = URLSessionImageLoader.makeDiskCachedSession(diskCapacity: 1_000_000)
+        let configuration = session.configuration
+
+        #expect(configuration.urlCache?.diskCapacity == 1_000_000)
+        #expect(configuration.urlCache?.memoryCapacity == 0)
+        #expect(configuration.requestCachePolicy == .returnCacheDataElseLoad)
+    }
+}

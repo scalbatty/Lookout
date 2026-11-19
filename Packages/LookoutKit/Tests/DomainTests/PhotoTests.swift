@@ -31,7 +31,8 @@ struct PhotoTests {
         #expect(photo(width: 4000, height: 2000).aspectRatio == 2)
     }
 
-    @Test func aspectRatioFallsBackToSquareForZeroHeight() {
-        #expect(photo(width: 4000, height: 0).aspectRatio == 1)
+    @Test(arguments: [(width: 4000, height: 0), (width: 0, height: 3000), (width: 0, height: 0)])
+    func aspectRatioFallsBackToSquareForMissingDimensions(width: Int, height: Int) {
+        #expect(photo(width: width, height: height).aspectRatio == 1)
     }
 }

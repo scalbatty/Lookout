@@ -28,8 +28,9 @@ public struct Photo: Identifiable, Hashable, Sendable {
     }
 
     /// Width divided by height. Lets layouts reserve space before the image loads.
+    /// Falls back to square when a dimension is missing, so it's always positive.
     public var aspectRatio: Double {
-        guard height > 0 else { return 1 }
+        guard width > 0, height > 0 else { return 1 }
         return Double(width) / Double(height)
     }
 }

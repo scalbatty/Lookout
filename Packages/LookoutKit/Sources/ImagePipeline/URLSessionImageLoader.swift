@@ -61,8 +61,15 @@ public struct URLSessionImageLoader: ImageLoading {
         session: URLSession,
         cache: MemoryImageCache
     ) async throws -> UIImage {
-        let (data, _) = try await session.data(from: request.url)
+        let urlRequest = URLRequest(url: request.url)
+        let (data, response) = try await session.data(for: urlRequest)
         try Task.checkCancellation()
+        // An error page isn't an image. Drop it from the disk cache too,
+        // which would otherwise return it again without asking the server.
+        if let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {
+            session.configuration.urlCache?.removeCachedResponse(for: urlRequest)
+            throw URLError(.badServerResponse)
+        }
         let image = try ImageDecoder.downsample(data, maxPixelSize: request.maxPixelSize)
         cache.insert(image, for: request.url, maxPixelSize: request.maxPixelSize)
         return image

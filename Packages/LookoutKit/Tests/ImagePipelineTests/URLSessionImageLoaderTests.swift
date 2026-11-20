@@ -7,6 +7,7 @@ import UIKit
 /// Serves a small JPEG for every request and counts them.
 final class StubImageProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var requestCount = 0
+    nonisolated(unsafe) static var statusCode = 200
     static let jpeg: Data = {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -21,7 +22,7 @@ final class StubImageProtocol: URLProtocol, @unchecked Sendable {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
         Self.requestCount += 1
-        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: request.url!, statusCode: Self.statusCode, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Self.jpeg)
         client?.urlProtocolDidFinishLoading(self)
@@ -33,12 +34,21 @@ final class StubImageProtocol: URLProtocol, @unchecked Sendable {
 struct URLSessionImageLoaderTests {
     private func loader() -> URLSessionImageLoader {
         StubImageProtocol.requestCount = 0
+        StubImageProtocol.statusCode = 200
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubImageProtocol.self]
         return URLSessionImageLoader(session: URLSession(configuration: configuration))
     }
 
     private let request = ImageRequest(url: URL(string: "https://example.com/a.jpg")!, maxPixelSize: 200)
+
+    @Test func errorStatusFailsEvenWithAnImageBody() async {
+        let loader = loader()
+        StubImageProtocol.statusCode = 404
+
+        await #expect(throws: URLError.self) { try await loader.image(for: request) }
+        #expect(loader.cachedImage(for: request) == nil)
+    }
 
     @Test func secondLoadComesFromMemory() async throws {
         let loader = loader()

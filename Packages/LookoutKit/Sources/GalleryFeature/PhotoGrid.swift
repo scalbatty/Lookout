@@ -13,6 +13,8 @@ public struct PhotoGrid<EmptyContent: View>: View {
 
     private let spacing: CGFloat = 8
 
+    @Environment(\.displayScale) private var displayScale
+
     public init(
         model: PhotoGridModel,
         imageLoader: any ImageLoading,
@@ -69,6 +71,16 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     }
                 }
                 .padding(spacing)
+            }
+            // Each new page's images are preloaded as soon as it arrives, so
+            // they're usually ready before their cells scroll into view. Lists
+            // only grow: on the first call (equal counts) or for a new, shorter
+            // list, everything is new.
+            .onChange(of: photos.count, initial: true) { oldCount, newCount in
+                let firstNew = oldCount < newCount ? oldCount : 0
+                imageLoader.prefetch(photos[firstNew...].compactMap {
+                    $0.gridImageRequest(side: cellSide, displayScale: displayScale)
+                })
             }
         }
     }

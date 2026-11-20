@@ -7,6 +7,20 @@ extension Photo {
     /// panoramas would otherwise need huge downloads and decodes for a crop.
     static let maxLongEdgeFactor = 2.0
 
+    /// Grid images are loaded at most at 2× even on 3× screens: at cell size
+    /// the difference is hard to see, while each image takes ~2.25× less
+    /// memory and uses a smaller download (`small` instead of `regular`).
+    /// The full-screen view keeps the screen's real scale.
+    static let maxGridImageScale: CGFloat = 2
+
+    /// The request for this photo in a grid cell of `side` points. The one
+    /// place this is computed, so prefetched images are exactly the ones
+    /// cells then look up.
+    func gridImageRequest(side: CGFloat, displayScale: CGFloat) -> ImageRequest? {
+        let scale = min(displayScale, Self.maxGridImageScale)
+        return imageRequest(fillingSquareOf: Int((side * scale).rounded(.up)))
+    }
+
     /// The request for showing this photo cropped to fill a square of
     /// `side` pixels: the shorter edge must cover the square, so the longer
     /// edge is `side × (long / short)`, capped at `maxLongEdgeFactor × side`.

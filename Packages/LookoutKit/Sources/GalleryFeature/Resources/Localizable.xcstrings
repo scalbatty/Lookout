@@ -1,6 +1,42 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "about.button" : {
+      "comment" : "Accessibility label of the button opening the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "about.madeBy" : {
+      "comment" : "Small caption above the author's name on the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Made by"
+          }
+        }
+      }
+    },
+    "about.tagline" : {
+      "comment" : "Under the app name on the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editorial photos from Unsplash"
+          }
+        }
+      }
+    },
     "cell.caption.placeholder" : {
       "comment" : "Shown in a grid cell when the photo has no description.",
       "extractionState" : "manual",

@@ -12,6 +12,7 @@ struct FeedHeader: View {
     var onSearch: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsAbout = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -27,15 +28,9 @@ struct FeedHeader: View {
                     .contentTransition(.opacity)
             }
             Spacer(minLength: 12)
+            headerButton(localized("about.button"), systemImage: "info.circle") { showsAbout = true }
             if let onSearch {
-                Button(action: onSearch) {
-                    Label { Text(localized("search.button")) } icon: { Image(systemName: "magnifyingglass") }
-                        .labelStyle(.iconOnly)
-                        .font(.title3.weight(.semibold))
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
+                headerButton(localized("search.button"), systemImage: "magnifyingglass", action: onSearch)
             }
         }
         .padding(.horizontal)
@@ -52,6 +47,22 @@ struct FeedHeader: View {
         }
         .animation(reduceMotion ? nil : .smooth, value: query)
         .accessibilityElement(children: .contain)
+        .sheet(isPresented: $showsAbout) {
+            AboutView()
+                .presentationDetents([.height(260)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    private func headerButton(_ title: LocalizedStringResource, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label { Text(title) } icon: { Image(systemName: systemImage) }
+                .labelStyle(.iconOnly)
+                .font(.title3.weight(.semibold))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 
     private var kicker: Text {

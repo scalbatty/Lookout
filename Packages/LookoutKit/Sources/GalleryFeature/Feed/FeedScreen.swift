@@ -50,6 +50,11 @@ public struct FeedScreen: View {
         path.append(photo)
     }
 
+    /// How far the masthead has scrolled away, from 0 to its height.
+    private var headerScroll: CGFloat {
+        min(max(isSearching ? resultsScroll : feedScroll, 0), headerHeight)
+    }
+
     public var body: some View {
         NavigationStack(path: $path) {
             // The feed stays mounted under the results, so closing search
@@ -93,15 +98,18 @@ public struct FeedScreen: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 FeedHeader(query: search.query?.text, onSearch: searchButtonAction)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
-                    // Moves up exactly as far as the content, until it's gone.
-                    .offset(y: -min(max(isSearching ? resultsScroll : feedScroll, 0), headerHeight))
+                    // Moves up exactly as far as the content, until it's gone,
+                    // fading out so it never sits under the status bar.
+                    .offset(y: -headerScroll)
+                    .opacity(headerHeight > 0 ? 1 - headerScroll / headerHeight : 1)
             }
-            // Paper behind the status bar, so the header and photos pass
-            // under it instead of under the clock.
+            // Photos scroll on under the notch; a short fade from the page
+            // colour keeps the clock and battery readable over bright ones.
             .overlay(alignment: .top) {
-                Color.paper
+                LinearGradient(colors: [Color.paper.opacity(0.85), Color.paper.opacity(0)], startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea(edges: .top)
                     .frame(height: 0)
+                    .allowsHitTesting(false)
             }
             .searchable(text: $searchText, isPresented: $isSearchPresented, prompt: Text(localized("search.prompt")))
             .minimizedSearch()

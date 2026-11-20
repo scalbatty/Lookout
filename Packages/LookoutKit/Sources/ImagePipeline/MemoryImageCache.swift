@@ -12,10 +12,14 @@ public final class MemoryImageCache: @unchecked Sendable {
     // @unchecked: NSCache is thread-safe, entries are immutable, and
     // inserts are serialised by `insertLock`.
 
+    /// The length of an image's longest edge, in pixels: the
+    /// `ImageRequest.maxPixelSize` it was decoded at.
+    private typealias PixelSize = Int
+
     /// The sizes loaded for one URL. Replaced, never mutated, on insert.
     private final class Entry {
-        let images: [Int: UIImage]
-        init(images: [Int: UIImage]) { self.images = images }
+        let images: [PixelSize: UIImage]
+        init(images: [PixelSize: UIImage]) { self.images = images }
     }
 
     private let storage = NSCache<NSURL, Entry>()
@@ -34,7 +38,7 @@ public final class MemoryImageCache: @unchecked Sendable {
     }
 
     func largestImage(forAnyOf urls: [URL]) -> UIImage? {
-        var best: (size: Int, image: UIImage)?
+        var best: (size: PixelSize, image: UIImage)?
         for url in urls {
             guard let entry = storage.object(forKey: url as NSURL) else { continue }
             for (size, image) in entry.images where size > (best?.size ?? 0) {

@@ -69,7 +69,7 @@ struct PhotoDetailView: View {
             .offset(y: dragOffset)
             .id(photo.id)
             .transition(pageTransition)
-            .task(id: photo.id) { prefetchNeighbours(fitting: proxy.size) }
+            .task(id: photo.id) { await preloadNeighbours(fitting: proxy.size) }
         }
         .ignoresSafeArea()
         .background(.black)
@@ -130,11 +130,19 @@ struct PhotoDetailView: View {
         )
     }
 
-    /// Starts loading the screen-sized images of both neighbours, so paging
-    /// shows them sharp straight away.
-    private func prefetchNeighbours(fitting size: CGSize) {
+    /// Loads the screen-sized images of both neighbours, so paging shows
+    /// them sharp straight away. Awaited rather than prefetched: moving on
+    /// cancels this task, and with it the neighbours' downloads (megabytes
+    /// each) unless the photo now shown needs them.
+    private func preloadNeighbours(fitting size: CGSize) async {
         let pixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
-        imageLoader.prefetch([neighbour(-1), neighbour(1)].compactMap { $0?.imageRequest(fitting: pixels) })
+        let requests = [neighbour(-1), neighbour(1)].compactMap { $0?.imageRequest(fitting: pixels) }
+        let loader = imageLoader
+        await withTaskGroup(of: Void.self) { group in
+            for request in requests {
+                group.addTask { _ = try? await loader.image(for: request) }
+            }
+        }
     }
 
     private var buttons: some View {

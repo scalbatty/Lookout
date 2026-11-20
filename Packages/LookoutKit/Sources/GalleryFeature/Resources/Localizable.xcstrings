@@ -61,6 +61,18 @@
         }
       }
     },
+    "detail.photoBy %@" : {
+      "comment" : "Credit under the caption in the full-screen view. The argument is the photographer's name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo by %@"
+          }
+        }
+      }
+    },
     "feed.empty.message" : {
       "comment" : "Message shown when the editorial feed has no photos.",
       "extractionState" : "manual",

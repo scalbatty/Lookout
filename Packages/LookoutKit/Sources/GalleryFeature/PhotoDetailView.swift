@@ -69,7 +69,7 @@ struct PhotoDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .statusBarHidden(!showsChrome)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(photo.accessibilityText)
+        .accessibilityLabel(photo.detailAccessibilityText)
         .accessibilityAddTraits(.isImage)
     }
 
@@ -92,6 +92,11 @@ struct PhotoDetailView: View {
             photo.captionText
                 .font(.body)
                 .foregroundStyle(.white)
+            if let creator = photo.creatorName {
+                Text(localized("detail.photoBy \(creator)"))
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)

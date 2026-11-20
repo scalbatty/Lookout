@@ -7,7 +7,7 @@ import Foundation
 enum PreviewPhotos {
     static let landscape = make("landscape", caption: "Aerial view of a beach with turquoise water", width: 4000, height: 3000)
     static let portrait = make("portrait", caption: "A long narrow corridor with recessed lighting", width: 3000, height: 4500)
-    static let noCaption = make("no-caption", caption: nil, width: 3000, height: 3000)
+    static let noCaption = make("no-caption", caption: nil, width: 3000, height: 3000, creatorName: nil)
     static let sponsored = make("sponsored", caption: "The Real Aussie Feeling", width: 2912, height: 3640, isSponsored: true)
     static let longCaption = make(
         "long-caption",
@@ -30,16 +30,17 @@ enum PreviewPhotos {
                 variants: base.variants.map {
                     ImageVariant(url: $0.url.appending(queryItems: [URLQueryItem(name: "p", value: "\(number)-\(index)")]), pixelWidth: $0.pixelWidth)
                 },
-                isSponsored: base.isSponsored
+                isSponsored: base.isSponsored,
+                creatorName: base.creatorName
             )
         }
     }
 
-    private static func make(_ id: PhotoID, caption: String?, width: Int, height: Int, isSponsored: Bool = false) -> Photo {
+    private static func make(_ id: PhotoID, caption: String?, width: Int, height: Int, isSponsored: Bool = false, creatorName: String? = "Ana Lima") -> Photo {
         let variants = [200, 400, 1080, width].map {
             ImageVariant(url: URL(string: "https://example.com/\(id.rawValue)/\($0).jpg")!, pixelWidth: $0)
         }
-        return Photo(id: id, caption: caption, width: width, height: height, variants: variants, isSponsored: isSponsored)
+        return Photo(id: id, caption: caption, width: width, height: height, variants: variants, isSponsored: isSponsored, creatorName: creatorName)
     }
 }
 #endif

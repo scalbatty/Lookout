@@ -10,12 +10,18 @@ struct UnsplashPhoto: Decodable, Sendable {
     let urls: URLs
     /// Present (non-null) only for paid placements in the editorial feed.
     let sponsorship: Sponsorship?
+    /// The photographer.
+    let user: User?
 
     struct URLs: Decodable, Sendable {
         let full: URL?
         let regular: URL?
         let small: URL?
         let thumb: URL?
+    }
+
+    struct User: Decodable, Sendable {
+        let name: String?
     }
 
     /// Its content isn't used yet; only its presence matters.

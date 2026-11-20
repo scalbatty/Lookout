@@ -17,4 +17,10 @@ extension Photo {
     var accessibilityText: Text {
         isSponsored ? captionText + Text(verbatim: ", ") + Text(localized("cell.sponsored")) : captionText
     }
+
+    /// The full-screen view also credits the photographer.
+    var detailAccessibilityText: Text {
+        guard let creatorName else { return accessibilityText }
+        return accessibilityText + Text(verbatim: ", ") + Text(localized("detail.photoBy \(creatorName)"))
+    }
 }

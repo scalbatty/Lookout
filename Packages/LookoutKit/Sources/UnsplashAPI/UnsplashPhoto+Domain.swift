@@ -19,8 +19,14 @@ extension UnsplashPhoto {
             width: width,
             height: height,
             variants: variants,
-            isSponsored: sponsorship != nil
+            isSponsored: sponsorship != nil,
+            creatorName: creatorName
         )
+    }
+
+    /// The photographer's display name. Blank counts as missing.
+    var creatorName: String? {
+        user?.name?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
     }
 
     /// `alt_description` first, then `description`. Blank values count as missing.
@@ -42,4 +48,8 @@ extension UnsplashPhoto {
             url.map { ImageVariant(url: $0, pixelWidth: width) }
         }
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

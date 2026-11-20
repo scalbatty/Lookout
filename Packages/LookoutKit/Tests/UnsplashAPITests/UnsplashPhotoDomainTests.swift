@@ -5,8 +5,8 @@ import Testing
 
 struct UnsplashPhotoDomainTests {
     /// Builds a photo from a minimal JSON payload, overriding caption fields.
-    private func photo(altDescription: String? = nil, description: String? = nil) throws -> UnsplashPhoto {
-        let json: [String: Any] = [
+    private func photo(altDescription: String? = nil, description: String? = nil, user: [String: Any]? = nil) throws -> UnsplashPhoto {
+        var json: [String: Any] = [
             "id": "abc",
             "width": 4000,
             "height": 3000,
@@ -19,6 +19,7 @@ struct UnsplashPhotoDomainTests {
                 "full": "https://images.unsplash.com/f",
             ],
         ]
+        json["user"] = user
         let data = try JSONSerialization.data(withJSONObject: json)
         return try JSONDecoder.unsplash().decode(UnsplashPhoto.self, from: data)
     }
@@ -37,6 +38,16 @@ struct UnsplashPhotoDomainTests {
 
     @Test func captionIsNilWhenBothMissing() throws {
         #expect(try photo().caption == nil)
+    }
+
+    @Test func creatorIsTheUsersName() throws {
+        #expect(try photo(user: ["name": " Ana Lima "]).domainPhoto.creatorName == "Ana Lima")
+    }
+
+    @Test func creatorIsNilWhenUnnamedOrMissing() throws {
+        #expect(try photo(user: ["name": "  "]).domainPhoto.creatorName == nil)
+        #expect(try photo(user: ["username": "ana"]).domainPhoto.creatorName == nil)
+        #expect(try photo().domainPhoto.creatorName == nil)
     }
 
     @Test func variantsUseFixedWidthsAndOriginalWidthForFull() throws {

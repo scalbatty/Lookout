@@ -10,6 +10,8 @@ public struct Photo: Identifiable, Hashable, Sendable {
     public let variants: [ImageVariant]
     /// Whether the photo is paid placement, so the UI can label it.
     public let isSponsored: Bool
+    /// Who took the photo, for credit, if the source names them.
+    public let creatorName: String?
 
     public init(
         id: PhotoID,
@@ -17,7 +19,8 @@ public struct Photo: Identifiable, Hashable, Sendable {
         width: Int,
         height: Int,
         variants: [ImageVariant],
-        isSponsored: Bool = false
+        isSponsored: Bool = false,
+        creatorName: String? = nil
     ) {
         self.id = id
         self.caption = caption
@@ -25,6 +28,7 @@ public struct Photo: Identifiable, Hashable, Sendable {
         self.height = height
         self.variants = variants
         self.isSponsored = isSponsored
+        self.creatorName = creatorName
     }
 
     /// Width divided by height. Lets layouts reserve space before the image loads.

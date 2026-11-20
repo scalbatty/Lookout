@@ -1,4 +1,5 @@
 import Foundation
+import os
 import UIKit
 
 /// Decoded images kept in memory, bounded by their size in bytes.
@@ -8,7 +9,8 @@ import UIKit
 /// this photo". `NSCache` evicts least recently used entries past the limit
 /// and empties itself under memory pressure.
 public final class MemoryImageCache: @unchecked Sendable {
-    // @unchecked: NSCache is thread-safe, and entries are immutable.
+    // @unchecked: NSCache is thread-safe, entries are immutable, and
+    // inserts are serialised by `insertLock`.
 
     /// The sizes loaded for one URL. Replaced, never mutated, on insert.
     private final class Entry {
@@ -17,6 +19,9 @@ public final class MemoryImageCache: @unchecked Sendable {
     }
 
     private let storage = NSCache<NSURL, Entry>()
+    /// Two sizes of one URL can finish loading at once (grid and full
+    /// screen); without this, one insert could overwrite the other's entry.
+    private let insertLock = OSAllocatedUnfairLock()
 
     /// - Parameter costLimit: Total decoded bytes to keep, about 70 grid
     ///   cells on a 3× iPhone with the default.
@@ -40,10 +45,12 @@ public final class MemoryImageCache: @unchecked Sendable {
     }
 
     func insert(_ image: UIImage, for url: URL, maxPixelSize: Int) {
-        var images = storage.object(forKey: url as NSURL)?.images ?? [:]
-        images[maxPixelSize] = image
-        let cost = images.values.reduce(0) { $0 + Self.cost(of: $1) }
-        storage.setObject(Entry(images: images), forKey: url as NSURL, cost: cost)
+        insertLock.withLock {
+            var images = storage.object(forKey: url as NSURL)?.images ?? [:]
+            images[maxPixelSize] = image
+            let cost = images.values.reduce(0) { $0 + Self.cost(of: $1) }
+            storage.setObject(Entry(images: images), forKey: url as NSURL, cost: cost)
+        }
     }
 
     /// Decoded bytes held by the image.

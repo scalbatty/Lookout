@@ -29,10 +29,16 @@ public protocol ImageLoading: Sendable {
     /// size it was loaded. Lets a view show what's available (e.g. the grid
     /// thumbnail) while a larger size loads.
     func largestCachedImage(forAnyOf urls: [URL]) -> UIImage?
+
+    /// Starts loading images that are likely to be shown soon, at low
+    /// priority, so they're in memory when needed. Returns immediately.
+    func prefetch(_ requests: [ImageRequest])
 }
 
 extension ImageLoading {
-    /// Loaders without a cache never have anything in memory.
+    /// Loaders without a cache never have anything in memory, and have nothing
+    /// to prefetch into.
     public func cachedImage(for request: ImageRequest) -> UIImage? { nil }
     public func largestCachedImage(forAnyOf urls: [URL]) -> UIImage? { nil }
+    public func prefetch(_ requests: [ImageRequest]) {}
 }

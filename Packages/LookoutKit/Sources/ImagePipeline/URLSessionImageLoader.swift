@@ -10,6 +10,8 @@ import UIKit
 public struct URLSessionImageLoader: ImageLoading {
     private let session: URLSession
     private let cache: MemoryImageCache
+    /// One download and decode per image, shared by everyone asking for it.
+    private let inFlight: InFlightLoads
 
     /// A session whose `URLCache` keeps downloaded images on disk.
     ///
@@ -34,6 +36,9 @@ public struct URLSessionImageLoader: ImageLoading {
     ) {
         self.session = session
         self.cache = cache
+        self.inFlight = InFlightLoads { [session, cache] request in
+            try await Self.download(request, session: session, cache: cache)
+        }
     }
 
     /// `@concurrent`: downloading and decoding never run on the caller's
@@ -43,6 +48,19 @@ public struct URLSessionImageLoader: ImageLoading {
         if let cached = cachedImage(for: request) {
             return cached
         }
+        return try await inFlight.image(for: request)
+    }
+
+    public func prefetch(_ requests: [ImageRequest]) {
+        inFlight.prefetch(requests.filter { cachedImage(for: $0) == nil })
+    }
+
+    @concurrent
+    private static func download(
+        _ request: ImageRequest,
+        session: URLSession,
+        cache: MemoryImageCache
+    ) async throws -> UIImage {
         let (data, _) = try await session.data(from: request.url)
         try Task.checkCancellation()
         let image = try ImageDecoder.downsample(data, maxPixelSize: request.maxPixelSize)

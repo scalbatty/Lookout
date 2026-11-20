@@ -76,3 +76,28 @@ struct DiskCachedSessionTests {
         #expect(configuration.requestCachePolicy == .returnCacheDataElseLoad)
     }
 }
+
+extension URLSessionImageLoaderTests {
+    @Test func concurrentRequestsForTheSameImageDownloadOnce() async throws {
+        let loader = loader()
+        async let first = loader.image(for: request)
+        async let second = loader.image(for: request)
+        let (a, b) = try await (first, second)
+
+        #expect(StubImageProtocol.requestCount == 1)
+        #expect(a === b)
+    }
+
+    @Test func prefetchFillsTheCache() async throws {
+        let loader = loader()
+        loader.prefetch([request])
+
+        let deadline = ContinuousClock.now + .seconds(2)
+        while loader.cachedImage(for: request) == nil, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(loader.cachedImage(for: request) != nil)
+        #expect(StubImageProtocol.requestCount == 1)
+    }
+}

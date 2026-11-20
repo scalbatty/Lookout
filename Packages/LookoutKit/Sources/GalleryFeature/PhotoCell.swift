@@ -54,12 +54,12 @@ struct PhotoCell: View {
             .task(id: imageRequest) { await loadImage() }
             .onDisappear { image = nil }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(accessibilityText)
+            .accessibilityLabel(photo.accessibilityText)
             .accessibilityAddTraits(.isImage)
     }
 
     private var caption: some View {
-        captionText
+        photo.captionText
             .font(.caption)
             .foregroundStyle(.white)
             .lineLimit(2)
@@ -69,14 +69,6 @@ struct PhotoCell: View {
                 // Keeps white text legible on bright photos.
                 LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
             }
-    }
-
-    private var captionText: Text {
-        if let caption = photo.caption {
-            Text(caption)
-        } else {
-            Text(localized("cell.caption.placeholder")).italic()
-        }
     }
 
     @ViewBuilder
@@ -90,10 +82,6 @@ struct PhotoCell: View {
                 .background(.black.opacity(0.55), in: .capsule)
                 .padding(6)
         }
-    }
-
-    private var accessibilityText: Text {
-        photo.isSponsored ? captionText + Text(verbatim: ", ") + Text(localized("cell.sponsored")) : captionText
     }
 
     private func loadImage() async {

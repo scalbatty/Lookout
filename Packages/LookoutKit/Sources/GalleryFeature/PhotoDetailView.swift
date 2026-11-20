@@ -50,7 +50,7 @@ struct PhotoDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .statusBarHidden(!showsChrome)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(captionText)
+        .accessibilityLabel(photo.accessibilityText)
         .accessibilityAddTraits(.isImage)
     }
 
@@ -87,7 +87,7 @@ struct PhotoDetailView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.7))
             }
-            captionText
+            photo.captionText
                 .font(.body)
                 .foregroundStyle(.white)
         }
@@ -98,14 +98,6 @@ struct PhotoDetailView: View {
         .background(alignment: .bottom) {
             LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
-        }
-    }
-
-    private var captionText: Text {
-        if let caption = photo.caption {
-            Text(caption)
-        } else {
-            Text(localized("cell.caption.placeholder")).italic()
         }
     }
 

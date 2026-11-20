@@ -11,9 +11,13 @@ struct AppConfig {
     /// profiling without spending request quota. Launch with
     /// `-ReplayRecordedFeed YES` (set in the scheme, or by Instruments).
     let replaysRecordedFeed: Bool
+    /// Delay before each replayed page, to see loading states. Launch with
+    /// `-ReplayLatency 3` (seconds).
+    let replayLatency: Duration
 
     init(bundle: Bundle = .main, defaults: UserDefaults = .standard) {
         replaysRecordedFeed = defaults.bool(forKey: "ReplayRecordedFeed")
+        replayLatency = .seconds(defaults.double(forKey: "ReplayLatency"))
         // An unset xcconfig variable still produces an empty string in Info.plist.
         let key = bundle.object(forInfoDictionaryKey: "UnsplashAccessKey") as? String
         unsplashAccessKey = (key?.isEmpty == false) ? key : nil

@@ -15,7 +15,7 @@ struct LookoutApp: App {
                 .map { Bundle.main.url(forResource: "editorial-page-\($0)", withExtension: "json") }
                 .prefix { $0 != nil }
                 .compactMap { $0 }
-            repository = try? UnsplashPhotoRepository.replaying(recordedPages: Array(pages))
+            repository = try? UnsplashPhotoRepository.replaying(recordedPages: Array(pages), latency: config.replayLatency)
         } else {
             repository = config.unsplashAccessKey.map { UnsplashPhotoRepository(accessKey: $0) }
         }

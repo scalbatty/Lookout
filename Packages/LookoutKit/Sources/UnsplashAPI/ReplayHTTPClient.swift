@@ -9,8 +9,11 @@ import Foundation
 struct ReplayHTTPClient: HTTPClient {
     /// Recorded editorial pages, in page order.
     let pages: [Data]
+    /// Wait before each response, to see loading states.
+    var latency: Duration = .zero
 
     func response(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        try await Task.sleep(for: latency)
         guard let url = request.url else { throw URLError(.badURL) }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let page = components?.queryItems?.first { $0.name == "page" }?.value.flatMap(Int.init) ?? 1
@@ -39,8 +42,9 @@ struct ReplayHTTPClient: HTTPClient {
 extension UnsplashPhotoRepository {
     /// A repository replaying recorded editorial pages (files containing a
     /// `GET /photos` response body), in page order. No network, no key.
-    public static func replaying(recordedPages: [URL]) throws -> UnsplashPhotoRepository {
+    /// `latency` delays each response, to see loading states.
+    public static func replaying(recordedPages: [URL], latency: Duration = .zero) throws -> UnsplashPhotoRepository {
         let pages = try recordedPages.map { try Data(contentsOf: $0) }
-        return UnsplashPhotoRepository(accessKey: "replay", http: ReplayHTTPClient(pages: pages))
+        return UnsplashPhotoRepository(accessKey: "replay", http: ReplayHTTPClient(pages: pages, latency: latency))
     }
 }

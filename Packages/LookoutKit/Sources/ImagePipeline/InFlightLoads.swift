@@ -9,7 +9,9 @@ import UIKit
 ///
 /// Each load counts the callers awaiting it. When the last one is cancelled
 /// (a cell left the screen, the full-screen view moved to another photo),
-/// the load is cancelled too: full-screen images are megabytes, not worth
+/// the load is cancelled too, after a short grace period in case someone
+/// joins it again (paging to a photo hands its load from the neighbour
+/// preload to the page itself, cancelling one before the other starts): full-screen images are megabytes, not worth
 /// finishing for nobody. Preloads are the exception: they run to completion,
 /// since a page's grid images are small and preloaded on purpose.
 final class InFlightLoads: Sendable {
@@ -27,8 +29,12 @@ final class InFlightLoads: Sendable {
     // Not `Mutex` (Synchronization): it requires iOS 18, and we support iOS 17.
     private let entries = OSAllocatedUnfairLock<[ImageRequest: Entry]>(initialState: [:])
     private let load: Load
+    private let grace: Duration
 
-    init(load: @escaping Load) {
+    /// - Parameter grace: How long a load nobody waits for keeps running
+    ///   before it's cancelled, so a caller arriving right after keeps it.
+    init(grace: Duration = .milliseconds(300), load: @escaping Load) {
+        self.grace = grace
         self.load = load
     }
 
@@ -91,13 +97,22 @@ final class InFlightLoads: Sendable {
         entries.withLock { entries in
             guard var entry = entries[request], entry.id == id else { return }
             entry.waiters -= 1
-            if entry.waiters == 0, !entry.isPinned {
-                entry.task.cancel()
-                // A new request for the same image starts afresh.
-                entries[request] = nil
-            } else {
-                entries[request] = entry
-            }
+            entries[request] = entry
+        }
+        Task { [grace] in
+            try? await Task.sleep(for: grace)
+            cancelIfAbandoned(request, id: id)
+        }
+    }
+
+    /// Cancels the load if nobody has joined it since its last caller left.
+    private func cancelIfAbandoned(_ request: ImageRequest, id: UUID) {
+        entries.withLock { entries in
+            guard let entry = entries[request], entry.id == id,
+                  entry.waiters == 0, !entry.isPinned else { return }
+            entry.task.cancel()
+            // A new request for the same image starts afresh.
+            entries[request] = nil
         }
     }
 

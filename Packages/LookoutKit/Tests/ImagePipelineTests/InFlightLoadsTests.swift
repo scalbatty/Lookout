@@ -53,8 +53,8 @@ struct InFlightLoadsTests {
 
     /// A load that waits for `gate`, then counts whether it finished or
     /// noticed it was cancelled.
-    private func gatedLoads(gate: Gate, finished: Counter, cancelled: Counter) -> InFlightLoads {
-        InFlightLoads { _ in
+    private func gatedLoads(gate: Gate, finished: Counter, cancelled: Counter, grace: Duration = .milliseconds(10)) -> InFlightLoads {
+        InFlightLoads(grace: grace) { _ in
             await gate.wait()
             if Task.isCancelled {
                 await cancelled.increment()
@@ -106,6 +106,22 @@ struct InFlightLoadsTests {
         await gate.open()
 
         await waitUntil { await finished.value == 1 }
+        #expect(await cancelled.value == 0)
+    }
+
+    @Test func callerArrivingWithinTheGracePeriodKeepsTheLoad() async throws {
+        let (gate, finished, cancelled) = (Gate(), Counter(), Counter())
+        let loads = gatedLoads(gate: gate, finished: finished, cancelled: cancelled, grace: .seconds(1))
+
+        let leaving = Task { try await loads.image(for: request) }
+        await waitUntil { loads.count == 1 }
+        leaving.cancel()
+        // Like paging: the neighbour preload leaves, the page joins.
+        let arriving = Task { try await loads.image(for: request) }
+        await gate.open()
+
+        _ = try await arriving.value
+        #expect(await finished.value == 1)
         #expect(await cancelled.value == 0)
     }
 

@@ -107,9 +107,13 @@ struct PhotoDetailView: View {
         // Lets the grid keep this photo in view, and load its next page as
         // the end comes near.
         .onChange(of: photo.id, initial: true) {
-            grid.shownPhotoID = photo.id
             grid.itemAppeared(photo.id)
         }
+        // Not on open: the tapped cell is already in view, and scrolling to
+        // centre it would jump the grid under the zoom.
+        .onChange(of: photo.id) { grid.shownPhotoID = photo.id }
+        // Cleared so paging back to a previously shown photo still scrolls.
+        .onDisappear { grid.shownPhotoID = nil }
     }
 
     /// Shows the photo `step` places away, sliding it in from below (next) or above.

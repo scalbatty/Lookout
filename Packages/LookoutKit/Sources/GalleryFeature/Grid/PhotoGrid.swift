@@ -14,6 +14,8 @@ public struct PhotoGrid<EmptyContent: View>: View {
     private let spacing: CGFloat = 8
 
     @Environment(\.displayScale) private var displayScale
+    /// Cells fully on screen. Not observed: only read when deciding to scroll.
+    @State private var visibleIDs = VisibleIDs()
 
     public init(
         model: PhotoGridModel,
@@ -89,7 +91,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
                 // Follows the photo shown full screen, out of sight under it, so
                 // its cell is there for the zoom back.
                 .onChange(of: model.shownPhotoID) { _, id in
-                    if let id { scroller.scrollTo(id, anchor: .center) }
+                    if let id, !visibleIDs.contains(id) { scroller.scrollTo(id, anchor: .center) }
                 }
             }
             // Each new page's images are preloaded as soon as it arrives, so
@@ -117,6 +119,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
         }
         .buttonStyle(PressableCellStyle())
         .onAppear { model.itemAppeared(photo.id) }
+        .trackingVisibility(of: photo.id, in: visibleIDs)
     }
 
     private func placeholderGrid(layout: MasonryLayout) -> some View {
@@ -141,6 +144,28 @@ public struct PhotoGrid<EmptyContent: View>: View {
         .frame(maxHeight: .infinity, alignment: .top)
         .clipped()
         .accessibilityHidden(true)
+    }
+}
+
+/// The IDs of the cells on screen, kept out of SwiftUI's observation so
+/// scrolling doesn't re-render the grid.
+private final class VisibleIDs {
+    private var ids: Set<Photo.ID> = []
+    func contains(_ id: Photo.ID) -> Bool { ids.contains(id) }
+    func set(_ id: Photo.ID, visible: Bool) {
+        if visible { ids.insert(id) } else { ids.remove(id) }
+    }
+}
+
+private extension View {
+    /// Before iOS 18 nothing is tracked, so the grid always scrolls.
+    @ViewBuilder
+    func trackingVisibility(of id: Photo.ID, in visibleIDs: VisibleIDs) -> some View {
+        if #available(iOS 18, *) {
+            onScrollVisibilityChange(threshold: 0.9) { visibleIDs.set(id, visible: $0) }
+        } else {
+            self
+        }
     }
 }
 

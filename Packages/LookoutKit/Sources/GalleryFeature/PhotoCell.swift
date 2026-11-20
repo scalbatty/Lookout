@@ -15,11 +15,16 @@ struct PhotoCell: View {
     let imageLoader: any ImageLoading
     /// Where the zoom transition to the full-screen photo starts, if any.
     var transitionNamespace: Namespace.ID?
+    /// Shifts the loading pulse, so it travels across the grid as the
+    /// placeholder tiles' does (`row + column`).
+    var wave = 0
 
     @Environment(\.displayScale) private var displayScale
     /// Holds the image while the cell is on screen, so it stays even if the
     /// cache evicts it meanwhile.
     @State private var image: UIImage?
+    /// The load failed: the placeholder stays, but stops breathing.
+    @State private var failed = false
 
     private var imageRequest: ImageRequest? {
         photo.gridImageRequest(size: size, displayScale: displayScale)
@@ -33,7 +38,15 @@ struct PhotoCell: View {
 
     var body: some View {
         Rectangle()
-            .fill(.quaternary)
+            .fill(.clear)
+            // Breathes like the grid's placeholder tiles while loading.
+            .background {
+                if displayedImage == nil {
+                    Rectangle()
+                        .fill(.tertiary)
+                        .breathing(wave: wave, isActive: !failed)
+                }
+            }
             .overlay {
                 if let displayedImage {
                     Image(uiImage: displayedImage)
@@ -108,10 +121,12 @@ struct PhotoCell: View {
             return
         }
         // Failures and cancellation leave the placeholder in place.
+        failed = false
         let loaded = try? await imageLoader.image(for: imageRequest)
         // The cell may have left the screen meanwhile: don't hold on to the image.
         guard !Task.isCancelled else { return }
         image = loaded
+        failed = loaded == nil
     }
 }
 

@@ -157,10 +157,11 @@ struct ZoomableImageView: UIViewRepresentable {
 private final class CenteringScrollView: UIScrollView {
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Below the minimum scale (pinching out past fit), centre as if at the
-        // minimum: the content then stays under the fingers and only returns
-        // to the middle with the bounce, instead of jumping there first.
-        let scale = max(zoomScale, minimumZoomScale) / zoomScale
+        // Past either limit (pinching beyond fit or beyond the maximum),
+        // centre as if at that limit: the content then stays under the
+        // fingers and the bounce back shrinks it in place, instead of
+        // jumping to the middle first.
+        let scale = min(max(zoomScale, minimumZoomScale), maximumZoomScale) / zoomScale
         let horizontal = max(0, (bounds.width - contentSize.width * scale) / 2)
         let vertical = max(0, (bounds.height - contentSize.height * scale) / 2)
         let inset = UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)

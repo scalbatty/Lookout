@@ -54,10 +54,10 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     // calling `onAppear`.
                     LazyVStack(spacing: spacing) {
                         HStack(alignment: .top, spacing: spacing) {
-                            ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { _, column in
+                            ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { columnIndex, column in
                                 LazyVStack(spacing: spacing) {
-                                    ForEach(column) { photo in
-                                        cell(for: photo, layout: layout)
+                                    ForEach(Array(column.enumerated()), id: \.element.id) { row, photo in
+                                        cell(for: photo, layout: layout, wave: row + columnIndex)
                                     }
                                 }
                                 .frame(width: layout.columnWidth)
@@ -91,13 +91,14 @@ public struct PhotoGrid<EmptyContent: View>: View {
         }
     }
 
-    private func cell(for photo: Photo, layout: MasonryLayout) -> some View {
+    private func cell(for photo: Photo, layout: MasonryLayout, wave: Int) -> some View {
         Button { onSelect(photo) } label: {
             PhotoCell(
                 photo: photo,
                 size: layout.size(for: photo),
                 imageLoader: imageLoader,
-                transitionNamespace: transitionNamespace
+                transitionNamespace: transitionNamespace,
+                wave: wave
             )
         }
         .buttonStyle(PressableCellStyle())

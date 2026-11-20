@@ -53,11 +53,26 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     // containers wait until a view nears the screen before
                     // calling `onAppear`.
                     LazyVStack(spacing: spacing) {
+                        let arrangement = layout.arrange(photos)
+                        let placeholders: [[CGFloat]] = if case .loading = footer {
+                            placeholderHeights(below: arrangement.heights, rows: nextPagePlaceholderCount, layout: layout)
+                        } else {
+                            Array(repeating: [], count: layout.columnCount)
+                        }
                         HStack(alignment: .top, spacing: spacing) {
-                            ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { columnIndex, column in
+                            ForEach(Array(arrangement.columns.enumerated()), id: \.offset) { columnIndex, column in
                                 LazyVStack(spacing: spacing) {
                                     ForEach(Array(column.enumerated()), id: \.element.id) { row, photo in
                                         cell(for: photo, layout: layout, wave: row + columnIndex)
+                                    }
+                                    // While the next page loads, each column carries on
+                                    // right under its own last photo, all ending level.
+                                    ForEach(Array(placeholders[columnIndex].enumerated()), id: \.offset) { index, height in
+                                        PlaceholderTile(
+                                            size: CGSize(width: layout.columnWidth, height: height),
+                                            wave: index + columnIndex
+                                        )
+                                        .accessibilityHidden(true)
                                     }
                                 }
                                 .frame(width: layout.columnWidth)
@@ -65,7 +80,6 @@ public struct PhotoGrid<EmptyContent: View>: View {
                         }
                         PhotoGridFooter(
                             footer: footer,
-                            layout: layout,
                             loadMore: model.footerAppeared,
                             retry: model.retry
                         )
@@ -107,11 +121,16 @@ public struct PhotoGrid<EmptyContent: View>: View {
 
     private func placeholderGrid(layout: MasonryLayout) -> some View {
         HStack(alignment: .top, spacing: spacing) {
-            ForEach(0..<layout.columnCount, id: \.self) { column in
+            let columns = placeholderHeights(
+                below: Array(repeating: 0, count: layout.columnCount),
+                rows: 5,
+                layout: layout
+            )
+            ForEach(Array(columns.enumerated()), id: \.offset) { column, heights in
                 VStack(spacing: spacing) {
-                    ForEach(0..<5, id: \.self) { row in
+                    ForEach(Array(heights.enumerated()), id: \.offset) { row, height in
                         PlaceholderTile(
-                            size: placeholderSize(column: column, row: row, layout: layout),
+                            size: CGSize(width: layout.columnWidth, height: height),
                             wave: row + column
                         )
                     }
@@ -123,6 +142,21 @@ public struct PhotoGrid<EmptyContent: View>: View {
         .clipped()
         .accessibilityHidden(true)
     }
+}
+
+/// Placeholders added under each column while the next page loads: enough
+/// to fill the bottom of the screen without making the scroll view much taller.
+private let nextPagePlaceholderCount = 3
+
+/// Heights of `rows` placeholders under columns of `heights`, varied like
+/// photos, with the last of each column stretched so all columns end level.
+private func placeholderHeights(below heights: [CGFloat], rows: Int, layout: MasonryLayout) -> [[CGFloat]] {
+    let tiles = heights.indices.map { column in
+        (0..<rows).map { row in
+            placeholderSize(column: column, row: row, layout: layout).height
+        }
+    }
+    return MasonryLayout.evenedOut(tiles, below: heights)
 }
 
 /// Heights for placeholder tiles, varied like real photos (portrait,
@@ -139,7 +173,6 @@ private func placeholderSize(column: Int, row: Int, layout: MasonryLayout) -> CG
 /// the next page.
 private struct PhotoGridFooter: View {
     let footer: PhotoGridState.Footer
-    let layout: MasonryLayout
     let loadMore: () -> Void
     let retry: () -> Void
 
@@ -150,13 +183,8 @@ private struct PhotoGridFooter: View {
                 .frame(height: 1)
                 .onAppear(perform: loadMore)
         case .loading:
-            // The grid seems to continue while the next page loads.
-            HStack(alignment: .top, spacing: layout.spacing) {
-                ForEach(0..<layout.columnCount, id: \.self) { column in
-                    PlaceholderTile(size: placeholderSize(column: column, row: 0, layout: layout), wave: column)
-                }
-            }
-            .accessibilityHidden(true)
+            // The placeholders are at the end of each column instead.
+            EmptyView()
         case .failed(let error):
             VStack(spacing: 8) {
                 Text(error.message)

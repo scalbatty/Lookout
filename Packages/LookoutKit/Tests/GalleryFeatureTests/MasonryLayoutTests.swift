@@ -47,4 +47,25 @@ struct MasonryLayoutTests {
             #expect(Array(new.prefix(old.count)) == old)
         }
     }
+
+    @Test func heightsAreWhereTheNextCellGoes() {
+        let layout = MasonryLayout(width: 408, spacing: 8) // 2 columns of 192
+        let tall = photo("tall", width: 1000, height: 2000) // 384
+        let wide = photo("wide", width: 2000, height: 1000) // 96
+
+        #expect(layout.arrange([tall, wide]).heights == [392, 104])
+        #expect(layout.arrange([]).heights == [0, 0])
+    }
+
+    @Test func placeholdersEndAllColumnsLevel() {
+        let heights: [CGFloat] = [392, 104, 200]
+        let tiles: [[CGFloat]] = [[100, 50], [80, 120], [60, 60]]
+
+        let evened = MasonryLayout.evenedOut(tiles, below: heights)
+
+        // The tallest column keeps its tiles; the others stretch their last one.
+        #expect(evened == [[100, 50], [80, 358], [60, 282]])
+        let ends = zip(heights, evened).map { $0 + $1.reduce(0, +) }
+        #expect(Set(ends).count == 1)
+    }
 }

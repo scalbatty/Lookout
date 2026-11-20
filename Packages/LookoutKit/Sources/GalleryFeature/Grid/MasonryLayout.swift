@@ -34,6 +34,12 @@ struct MasonryLayout: Equatable {
 
     /// `photos` split into `columnCount` columns, in order within each.
     func columns(for photos: [Photo]) -> [[Photo]] {
+        arrange(photos).columns
+    }
+
+    /// `photos` split into columns, with each column's height so far: its
+    /// cells and the spacing after each, i.e. where the next cell would go.
+    func arrange(_ photos: [Photo]) -> (columns: [[Photo]], heights: [CGFloat]) {
         var columns = Array(repeating: [Photo](), count: columnCount)
         var heights = Array(repeating: CGFloat(0), count: columnCount)
         for photo in photos {
@@ -42,6 +48,18 @@ struct MasonryLayout: Equatable {
             columns[shortest].append(photo)
             heights[shortest] += size(for: photo).height + spacing
         }
-        return columns
+        return (columns, heights)
+    }
+
+    /// Placeholder tiles continuing columns of `heights`: each column gets its
+    /// `tiles`, the last one stretched so every column ends on the same line.
+    /// All columns need the same number of tiles.
+    static func evenedOut(_ tiles: [[CGFloat]], below heights: [CGFloat]) -> [[CGFloat]] {
+        let ends = zip(heights, tiles).map { $0 + $1.reduce(0, +) }
+        let bottom = ends.max() ?? 0
+        return zip(tiles, ends).map { column, end in
+            guard let last = column.last else { return column }
+            return column.dropLast() + [last + bottom - end]
+        }
     }
 }

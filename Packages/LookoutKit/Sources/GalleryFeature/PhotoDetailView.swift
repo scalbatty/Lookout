@@ -3,14 +3,24 @@ import ImageLoading
 import SwiftUI
 
 /// A photo shown whole, on black, with its caption. Tapping toggles the
-/// caption, navigation bar and status bar, for an unobstructed view.
+/// caption, navigation bar and status bar, for an unobstructed view; pinching
+/// or double-tapping zooms in.
 struct PhotoDetailView: View {
+    /// How far the photo can be zoomed in, relative to fitting the screen.
+    static let maximumZoomScale: CGFloat = 3
+    /// Past this zoom, the fitted image looks soft: load one sized for
+    /// `maximumZoomScale` instead.
+    static let detailZoomThreshold: CGFloat = 1.5
+
     let photo: Photo
     let imageLoader: any ImageLoading
 
     @Environment(\.displayScale) private var displayScale
     @State private var image: UIImage?
     @State private var showsChrome = true
+    /// Whether the photo was zoomed in enough to need a larger image. Stays
+    /// set, so zooming back out keeps the sharper image rather than reloading.
+    @State private var wantsDetail = false
     /// Whatever was already in memory when the view was created (usually the
     /// grid thumbnail). Taken once: looking it up on every render would swap
     /// it for the full image as soon as that one is cached, under the
@@ -25,24 +35,33 @@ struct PhotoDetailView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let pixelScale = displayScale * (wantsDetail ? Self.maximumZoomScale : 1)
             let request = photo.imageRequest(fitting: CGSize(
-                width: proxy.size.width * displayScale,
-                height: proxy.size.height * displayScale
+                width: proxy.size.width * pixelScale,
+                height: proxy.size.height * pixelScale
             ))
-            photoView
-                .frame(width: proxy.size.width, height: proxy.size.height)
-                .task(id: request) { await loadImage(request) }
+            // The full image replaces the placeholder (cross-faded) once loaded.
+            ZoomableImageView(
+                image: image ?? placeholder,
+                contentSize: fittedSize(in: proxy.size),
+                maximumZoomScale: Self.maximumZoomScale,
+                onZoomScaleChange: { scale in
+                    if scale > Self.detailZoomThreshold { wantsDetail = true }
+                },
+                onSingleTap: {
+                    withAnimation(.easeInOut(duration: 0.2)) { showsChrome.toggle() }
+                }
+            )
+            .task(id: request) { await loadImage(request) }
         }
         .ignoresSafeArea()
         .background(.black)
         .overlay(alignment: .bottom) {
             if showsChrome {
-                caption.transition(.opacity)
+                caption
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
-        }
-        .contentShape(.rect)
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) { showsChrome.toggle() }
         }
         .toolbar(showsChrome ? .visible : .hidden, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -54,30 +73,13 @@ struct PhotoDetailView: View {
         .accessibilityAddTraits(.isImage)
     }
 
-    /// Reserves the photo's shape while loading, so the zoom transition and
-    /// the image share the same frame.
-    private var photoView: some View {
-        Rectangle()
-            .fill(.white.opacity(0.08))
-            .overlay {
-                // Shown at once; the full image cross-fades over it.
-                if let placeholder {
-                    Image(uiImage: placeholder)
-                        .resizable()
-                        .scaledToFill()
-                }
-            }
-            .overlay {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .transition(.opacity)
-                }
-            }
-            .aspectRatio(photo.aspectRatio, contentMode: .fit)
-            .clipped()
-            .animation(.easeOut(duration: 0.25), value: image != nil)
+    /// The photo's size when shown whole in `size`.
+    private func fittedSize(in size: CGSize) -> CGSize {
+        let ratio = CGFloat(photo.aspectRatio)
+        guard size.width > 0, size.height > 0, ratio > 0 else { return size }
+        return size.width / size.height < ratio
+            ? CGSize(width: size.width, height: size.width / ratio)
+            : CGSize(width: size.height * ratio, height: size.height)
     }
 
     private var caption: some View {

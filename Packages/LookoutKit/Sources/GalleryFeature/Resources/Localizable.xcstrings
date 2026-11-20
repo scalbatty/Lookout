@@ -49,8 +49,32 @@
         }
       }
     },
+    "feed.header.editorial" : {
+      "comment" : "Kicker under the feed's wordmark when showing the editorial feed.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editorial picks"
+          }
+        }
+      }
+    },
+    "feed.header.searching %@" : {
+      "comment" : "Kicker under the feed's wordmark while showing search results. The argument is the search text.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results for “%@”"
+          }
+        }
+      }
+    },
     "feed.title" : {
-      "comment" : "Navigation title of the editorial feed.",
+      "comment" : "Wordmark at the top of the editorial feed.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -141,6 +165,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
+          }
+        }
+      }
+    },
+    "search.button" : {
+      "comment" : "Accessibility label of the search button in the feed header.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
           }
         }
       }

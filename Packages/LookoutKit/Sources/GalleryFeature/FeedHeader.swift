@@ -39,7 +39,7 @@ struct FeedHeader: View {
             }
         }
         .padding(.horizontal)
-        .padding(.top, 4)
+        .padding(.top, 20)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {

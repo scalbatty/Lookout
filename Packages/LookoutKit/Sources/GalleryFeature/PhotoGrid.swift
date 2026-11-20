@@ -92,8 +92,8 @@ public struct PhotoGrid<EmptyContent: View>: View {
     private func placeholderGrid(cellSide: CGFloat) -> some View {
         ScrollView {
             LazyVGrid(columns: columns(cellSide: cellSide), spacing: spacing) {
-                ForEach(0..<12, id: \.self) { _ in
-                    PlaceholderTile(side: cellSide)
+                ForEach(0..<12, id: \.self) { index in
+                    PlaceholderTile(side: cellSide, wave: index / 2 + index % 2)
                 }
             }
             .padding(spacing)
@@ -131,7 +131,7 @@ private struct PhotoGridFooter: View {
             // The grid seems to continue while the next page loads.
             HStack(spacing: spacing) {
                 PlaceholderTile(side: cellSide)
-                PlaceholderTile(side: cellSide)
+                PlaceholderTile(side: cellSide, wave: 1)
             }
             .accessibilityHidden(true)
         case .failed(let error):
@@ -157,15 +157,18 @@ private struct PhotoGridFooter: View {
     }
 }
 
-/// Stands in for a photo cell while photos load.
+/// Stands in for a photo cell while photos load. Tiles breathe, with
+/// `wave` (row + column) making the pulse travel diagonally across the grid.
 struct PlaceholderTile: View {
     let side: CGFloat
+    var wave = 0
 
     var body: some View {
         Rectangle()
             .fill(.quaternary)
             .clipShape(.tile)
             .frame(width: side, height: side)
+            .breathing(wave: wave)
     }
 }
 

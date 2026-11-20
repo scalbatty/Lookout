@@ -1,5 +1,6 @@
 import Foundation
 import ImageLoading
+import os
 import UIKit
 
 /// `ImageLoading` over `URLSession`: downloads, decodes off the main thread
@@ -8,6 +9,7 @@ import UIKit
 /// kept on disk, so an image evicted from memory comes back without the
 /// network.
 public struct URLSessionImageLoader: ImageLoading {
+    private static let logger = Logger(subsystem: "app.lookout", category: "ImagePipeline")
     private let session: URLSession
     private let cache: MemoryImageCache
     /// One download and decode per image, shared by everyone asking for it.
@@ -62,8 +64,20 @@ public struct URLSessionImageLoader: ImageLoading {
         cache: MemoryImageCache
     ) async throws -> UIImage {
         let urlRequest = URLRequest(url: request.url)
-        let (data, response) = try await session.data(for: urlRequest)
-        try Task.checkCancellation()
+        // The URL path identifies the photo; the query holds the rendition.
+        let name = request.url.lastPathComponent
+        logger.debug("load \(name, privacy: .public) @\(request.maxPixelSize)px: start")
+        let data: Data, response: URLResponse
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+            try Task.checkCancellation()
+        } catch {
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled {
+                logger.debug("load \(name, privacy: .public) @\(request.maxPixelSize)px: cancelled")
+            }
+            throw error
+        }
+        logger.debug("load \(name, privacy: .public) @\(request.maxPixelSize)px: done, \(data.count / 1024) KB")
         // An error page isn't an image. Drop it from the disk cache too,
         // which would otherwise return it again without asking the server.
         if let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {

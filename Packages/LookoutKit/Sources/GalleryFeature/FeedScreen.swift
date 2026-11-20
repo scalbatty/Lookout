@@ -1,6 +1,7 @@
 import Domain
 import ImageLoading
 import SwiftUI
+import UIKit
 
 /// The editorial feed: an endless grid of photos, searchable. Search
 /// results replace the feed in the same grid while the field has a query;
@@ -39,6 +40,13 @@ public struct FeedScreen: View {
         hasBottomSearch ? nil : { isSearchPresented = true }
     }
 
+    /// Opens a photo full screen. The search field loses focus first: left
+    /// focused, the system focuses it again, keyboard included, on the way back.
+    private func open(_ photo: Photo) {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        path.append(photo)
+    }
+
     public var body: some View {
         NavigationStack(path: $path) {
             // The feed stays mounted under the results, so closing search
@@ -47,7 +55,7 @@ public struct FeedScreen: View {
                 PhotoGrid(
                     model: model,
                     imageLoader: imageLoader,
-                    onSelect: { path.append($0) },
+                    onSelect: open,
                     // One zoom source per photo: the visible grid's.
                     transitionNamespace: isSearching ? nil : zoomNamespace
                 ) {
@@ -66,7 +74,7 @@ public struct FeedScreen: View {
                     PhotoGrid(
                         model: results,
                         imageLoader: imageLoader,
-                        onSelect: { path.append($0) },
+                        onSelect: open,
                         transitionNamespace: zoomNamespace
                     ) {
                         ContentUnavailableView.search(text: query.text)

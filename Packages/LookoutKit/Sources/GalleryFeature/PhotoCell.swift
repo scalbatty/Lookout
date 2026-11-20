@@ -60,16 +60,33 @@ struct PhotoCell: View {
 
     private var caption: some View {
         photo.captionText
-            .font(.caption)
+            .font(.footnote.weight(.medium))
             .foregroundStyle(.white)
             .lineLimit(2)
-            .padding(8)
+            .lineSpacing(-1)
+            .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(alignment: .bottom) {
-                // Keeps white text legible on bright photos.
-                LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                // A fixed height, so the scrim is as dark under the text in
+                // a tall cell as in a short one.
+                Self.scrim
+                    .frame(height: 90)
+                    .allowsHitTesting(false)
             }
     }
+
+    /// Black easing in from the top: barely there at first, dense under the
+    /// text, with no visible edge. Keeps white text legible on bright
+    /// photos without dimming the rest. A plain fill, cheap to draw on
+    /// every cell (unlike a shadow or blur).
+    private static let scrim = LinearGradient(
+        stops: stride(from: 0.0, through: 1.0, by: 0.125).map { location in
+            // Ease-in (cubic): opacity grows slowly, then quickly near the bottom.
+            .init(color: .black.opacity(0.75 * pow(location, 2.2)), location: location)
+        },
+        startPoint: .top,
+        endPoint: .bottom
+    )
 
     @ViewBuilder
     private var sponsoredBadge: some View {
@@ -79,8 +96,8 @@ struct PhotoCell: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
-                .background(.black.opacity(0.55), in: .capsule)
-                .padding(6)
+                .background(.black.opacity(0.6), in: .capsule)
+                .padding(8)
         }
     }
 

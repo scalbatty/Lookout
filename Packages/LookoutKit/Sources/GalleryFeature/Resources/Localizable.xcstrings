@@ -144,6 +144,18 @@
           }
         }
       }
+    },
+    "search.prompt" : {
+      "comment" : "Placeholder of the photo search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search photos"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

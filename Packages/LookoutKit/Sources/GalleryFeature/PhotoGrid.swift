@@ -47,29 +47,36 @@ public struct PhotoGrid<EmptyContent: View>: View {
         case .empty:
             emptyContent
         case .photos(let photos, let footer):
-            ScrollView {
-                // The footer sits in a lazy stack on purpose: only lazy
-                // containers wait until a view nears the screen before
-                // calling `onAppear`.
-                LazyVStack(spacing: spacing) {
-                    HStack(alignment: .top, spacing: spacing) {
-                        ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { _, column in
-                            LazyVStack(spacing: spacing) {
-                                ForEach(column) { photo in
-                                    cell(for: photo, layout: layout)
+            ScrollViewReader { scroller in
+                ScrollView {
+                    // The footer sits in a lazy stack on purpose: only lazy
+                    // containers wait until a view nears the screen before
+                    // calling `onAppear`.
+                    LazyVStack(spacing: spacing) {
+                        HStack(alignment: .top, spacing: spacing) {
+                            ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { _, column in
+                                LazyVStack(spacing: spacing) {
+                                    ForEach(column) { photo in
+                                        cell(for: photo, layout: layout)
+                                    }
                                 }
+                                .frame(width: layout.columnWidth)
                             }
-                            .frame(width: layout.columnWidth)
                         }
+                        PhotoGridFooter(
+                            footer: footer,
+                            layout: layout,
+                            loadMore: model.footerAppeared,
+                            retry: model.retry
+                        )
                     }
-                    PhotoGridFooter(
-                        footer: footer,
-                        layout: layout,
-                        loadMore: model.footerAppeared,
-                        retry: model.retry
-                    )
+                    .padding(spacing)
                 }
-                .padding(spacing)
+                // Follows the photo shown full screen, out of sight under it, so
+                // its cell is there for the zoom back.
+                .onChange(of: model.shownPhotoID) { _, id in
+                    if let id { scroller.scrollTo(id, anchor: .center) }
+                }
             }
             // Each new page's images are preloaded as soon as it arrives, so
             // they're usually ready before their cells scroll into view. Lists

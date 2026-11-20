@@ -16,6 +16,8 @@ public struct FeedScreen: View {
     @State private var resultsScroll: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var path: [Photo] = []
+    /// The grid the shown photo was opened from, whose photos it pages through.
+    @State private var openedGrid: PhotoGridModel?
     @Namespace private var zoomNamespace
     private let imageLoader: any ImageLoading
 
@@ -42,7 +44,8 @@ public struct FeedScreen: View {
 
     /// Opens a photo full screen. The search field loses focus first: left
     /// focused, the system focuses it again, keyboard included, on the way back.
-    private func open(_ photo: Photo) {
+    private func open(_ photo: Photo, in grid: PhotoGridModel) {
+        openedGrid = grid
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         path.append(photo)
     }
@@ -55,7 +58,7 @@ public struct FeedScreen: View {
                 PhotoGrid(
                     model: model,
                     imageLoader: imageLoader,
-                    onSelect: open,
+                    onSelect: { open($0, in: model) },
                     // One zoom source per photo: the visible grid's.
                     transitionNamespace: isSearching ? nil : zoomNamespace
                 ) {
@@ -74,7 +77,7 @@ public struct FeedScreen: View {
                     PhotoGrid(
                         model: results,
                         imageLoader: imageLoader,
-                        onSelect: open,
+                        onSelect: { open($0, in: results) },
                         transitionNamespace: zoomNamespace
                     ) {
                         ContentUnavailableView.search(text: query.text)
@@ -110,8 +113,12 @@ public struct FeedScreen: View {
             // the model wait for a pause in typing.
             .task(id: searchText) { await search.update(for: searchText) }
             .navigationDestination(for: Photo.self) { photo in
-                PhotoDetailView(photo: photo, imageLoader: imageLoader)
-                    .zoomTransitionDestination(id: photo.id, in: zoomNamespace)
+                PhotoDetailView(
+                    photo: photo,
+                    grid: openedGrid ?? model,
+                    imageLoader: imageLoader,
+                    transitionNamespace: zoomNamespace
+                )
             }
         }
         // Dark only: photos read best on a dark page, and the zoom into the

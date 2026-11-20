@@ -20,6 +20,11 @@ struct ZoomableImageView: UIViewRepresentable {
     var onZoomScaleChange: (CGFloat) -> Void = { _ in }
     /// Called on a single tap, once it's clear it isn't a double-tap.
     var onSingleTap: () -> Void = {}
+    /// Called as a vertical pan at fit scale moves, with its translation.
+    /// Zoomed in, pans move the image instead and this isn't called.
+    var onPagePan: (CGFloat) -> Void = { _ in }
+    /// Called when that pan ends, with its translation and velocity.
+    var onPagePanEnded: (_ translation: CGFloat, _ velocity: CGFloat) -> Void = { _, _ in }
 
     /// The scale a double-tap zooms to, as Photos does: close enough to see
     /// detail without being lost in the image.
@@ -50,6 +55,15 @@ struct ZoomableImageView: UIViewRepresentable {
         singleTap.require(toFail: doubleTap)
         scrollView.addGestureRecognizer(doubleTap)
         scrollView.addGestureRecognizer(singleTap)
+
+        let pagePan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pagePanned))
+        pagePan.delegate = context.coordinator
+        // One finger only: the vertical motion of a pinch mustn't page.
+        pagePan.maximumNumberOfTouches = 1
+        scrollView.addGestureRecognizer(pagePan)
+        // A horizontal pan fails ours and goes to the scroll view (and the
+        // system swipe back) as before.
+        scrollView.panGestureRecognizer.require(toFail: pagePan)
         return scrollView
     }
 
@@ -77,7 +91,7 @@ struct ZoomableImageView: UIViewRepresentable {
         Coordinator(parent: self)
     }
 
-    final class Coordinator: NSObject, UIScrollViewDelegate {
+    final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         var parent: ZoomableImageView
         let imageView = UIImageView()
 
@@ -91,6 +105,29 @@ struct ZoomableImageView: UIViewRepresentable {
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             parent.onZoomScaleChange(scrollView.zoomScale)
+        }
+
+        func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = recognizer as? UIPanGestureRecognizer,
+                  let scrollView = pan.view as? UIScrollView,
+                  scrollView.zoomScale <= scrollView.minimumZoomScale
+            else { return false }
+            let velocity = pan.velocity(in: scrollView)
+            return abs(velocity.y) > abs(velocity.x)
+        }
+
+        @objc func pagePanned(_ pan: UIPanGestureRecognizer) {
+            let translation = pan.translation(in: pan.view).y
+            switch pan.state {
+            case .changed:
+                parent.onPagePan(translation)
+            case .ended:
+                parent.onPagePanEnded(translation, pan.velocity(in: pan.view).y)
+            case .cancelled, .failed:
+                parent.onPagePanEnded(0, 0)
+            default:
+                break
+            }
         }
 
         @objc func singleTapped() {

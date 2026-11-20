@@ -61,6 +61,30 @@
         }
       }
     },
+    "detail.back" : {
+      "comment" : "Accessibility label of the button leaving the full-screen photo for the grid.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "detail.next" : {
+      "comment" : "Accessibility label of the button showing the next photo, full screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Photo"
+          }
+        }
+      }
+    },
     "detail.photoBy %@" : {
       "comment" : "Credit under the caption in the full-screen view. The argument is the photographer's name.",
       "extractionState" : "manual",
@@ -69,6 +93,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Photo by %@"
+          }
+        }
+      }
+    },
+    "detail.previous" : {
+      "comment" : "Accessibility label of the button showing the previous photo, full screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Photo"
           }
         }
       }

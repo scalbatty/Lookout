@@ -29,6 +29,10 @@ public final class PhotoGridModel {
         }
     }
 
+    /// The photo shown full screen from this grid. The grid scrolls to it,
+    /// so going back after paging zooms into that photo's cell.
+    public var shownPhotoID: PhotoID?
+
     private let paginator: Paginator
     /// How many items before the end a visible cell starts loading the next page.
     private let prefetchDistance: Int

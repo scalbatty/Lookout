@@ -13,25 +13,29 @@ extension Photo {
     /// The full-screen view keeps the screen's real scale.
     static let maxGridImageScale: CGFloat = 2
 
-    /// The request for this photo in a grid cell of `side` points. The one
+    /// The request for this photo in a grid cell of `size` points. The one
     /// place this is computed, so prefetched images are exactly the ones
     /// cells then look up.
-    func gridImageRequest(side: CGFloat, displayScale: CGFloat) -> ImageRequest? {
+    func gridImageRequest(size: CGSize, displayScale: CGFloat) -> ImageRequest? {
         let scale = min(displayScale, Self.maxGridImageScale)
-        return imageRequest(fillingSquareOf: Int((side * scale).rounded(.up)))
+        return imageRequest(filling: CGSize(width: size.width * scale, height: size.height * scale))
     }
 
-    /// The request for showing this photo cropped to fill a square of
-    /// `side` pixels: the shorter edge must cover the square, so the longer
-    /// edge is `side × (long / short)`, capped at `maxLongEdgeFactor × side`.
-    /// Beyond the cap, very elongated photos are slightly upscaled in their cell.
-    func imageRequest(fillingSquareOf side: Int) -> ImageRequest? {
-        let longOverShort = min(max(aspectRatio, 1 / aspectRatio), Self.maxLongEdgeFactor)
-        let longEdge = Int((Double(side) * longOverShort).rounded(.up))
-        // Landscape: the width is the long edge. Portrait: the width covers the square.
-        let neededWidth = aspectRatio >= 1 ? longEdge : side
-        guard let variant = bestVariant(forPixelWidth: neededWidth) else { return nil }
-        return ImageRequest(url: variant.url, maxPixelSize: longEdge)
+    /// The request for showing this photo cropped to fill a box of `size`
+    /// pixels: scaled until it covers the box, then capped so neither edge
+    /// exceeds `maxLongEdgeFactor` times the box's. Beyond the cap, very
+    /// elongated photos are slightly upscaled in their cell.
+    func imageRequest(filling size: CGSize) -> ImageRequest? {
+        guard size.width > 0, size.height > 0 else { return nil }
+        let width = Double(size.width), height = Double(size.height)
+        let photoWidth = Double(max(self.width, 1)), photoHeight = photoWidth / aspectRatio
+        let cover = max(width / photoWidth, height / photoHeight)
+        let (coverWidth, coverHeight) = (photoWidth * cover, photoHeight * cover)
+        let cap = min(1, Self.maxLongEdgeFactor * width / coverWidth, Self.maxLongEdgeFactor * height / coverHeight)
+        let neededWidth = (coverWidth * cap).rounded(.up)
+        let longEdge = (max(coverWidth, coverHeight) * cap).rounded(.up)
+        guard let variant = bestVariant(forPixelWidth: Int(neededWidth)) else { return nil }
+        return ImageRequest(url: variant.url, maxPixelSize: Int(longEdge))
     }
 
     /// The request for showing this photo whole, fitted inside a box of

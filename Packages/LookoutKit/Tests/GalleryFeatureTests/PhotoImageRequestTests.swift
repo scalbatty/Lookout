@@ -11,28 +11,35 @@ struct PhotoImageRequestTests {
     }
 
     @Test func squarePhotoUsesTheSide() {
-        let request = photo(width: 1000, height: 1000).imageRequest(fillingSquareOf: 400)
+        let request = photo(width: 1000, height: 1000).imageRequest(filling: CGSize(width: 400, height: 400))
         #expect(request?.maxPixelSize == 400)
         #expect(request?.url.lastPathComponent == "400")
     }
 
     @Test func portraitPhotoNeedsItsWidthToCoverTheSquare() {
         // 3:4 portrait in a 400 px square: 400 wide, 534 tall.
-        let request = photo(width: 3000, height: 4000).imageRequest(fillingSquareOf: 400)
+        let request = photo(width: 3000, height: 4000).imageRequest(filling: CGSize(width: 400, height: 400))
         #expect(request?.maxPixelSize == 534)
         #expect(request?.url.lastPathComponent == "400")
     }
 
     @Test func landscapePhotoNeedsItsHeightToCoverTheSquare() {
         // 4:3 landscape in a 400 px square: 534 wide, 400 tall.
-        let request = photo(width: 4000, height: 3000).imageRequest(fillingSquareOf: 400)
+        let request = photo(width: 4000, height: 3000).imageRequest(filling: CGSize(width: 400, height: 400))
         #expect(request?.maxPixelSize == 534)
         #expect(request?.url.lastPathComponent == "1080")
     }
 
+    @Test func portraitPhotoInAPortraitCellOfTheSameShape() {
+        // 3:4 photo in a 300×400 px cell: exactly 300 wide, 400 tall.
+        let request = photo(width: 3000, height: 4000).imageRequest(filling: CGSize(width: 300, height: 400))
+        #expect(request?.maxPixelSize == 400)
+        #expect(request?.url.lastPathComponent == "400")
+    }
+
     @Test func panoramaIsCappedAtTwiceTheSide() {
         // 10:1 in a 400 px square would need 4000 px wide; capped at 800.
-        let request = photo(width: 10000, height: 1000).imageRequest(fillingSquareOf: 400)
+        let request = photo(width: 10000, height: 1000).imageRequest(filling: CGSize(width: 400, height: 400))
         #expect(request?.maxPixelSize == 800)
         #expect(request?.url.lastPathComponent == "1080")
     }
@@ -57,6 +64,6 @@ struct PhotoImageRequestTests {
 
     @Test func noVariantsMeansNoRequest() {
         let bare = Photo(id: "p", caption: nil, width: 1, height: 1, variants: [])
-        #expect(bare.imageRequest(fillingSquareOf: 400) == nil)
+        #expect(bare.imageRequest(filling: CGSize(width: 400, height: 400)) == nil)
     }
 }

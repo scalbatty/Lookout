@@ -2,7 +2,7 @@ import Domain
 import ImageLoading
 import SwiftUI
 
-/// A 2-column grid of photos with endless scrolling. Shared by the feed and
+/// A masonry grid of photos (2 or 3 columns) with endless scrolling. Shared by the feed and
 /// search: what it shows comes entirely from its model.
 public struct PhotoGrid<EmptyContent: View>: View {
     private let model: PhotoGridModel
@@ -32,47 +32,42 @@ public struct PhotoGrid<EmptyContent: View>: View {
     public var body: some View {
         // Measured once for the whole grid, so cells don't measure themselves.
         GeometryReader { proxy in
-            content(cellSide: cellSide(forWidth: proxy.size.width))
+            content(layout: MasonryLayout(width: proxy.size.width, spacing: spacing))
         }
         .task { model.start() }
     }
 
     @ViewBuilder
-    private func content(cellSide: CGFloat) -> some View {
+    private func content(layout: MasonryLayout) -> some View {
         switch model.state {
         case .loading:
-            placeholderGrid(cellSide: cellSide)
+            placeholderGrid(layout: layout)
         case .failed(let error):
             PhotoGridErrorView(error: error, retry: model.retry)
         case .empty:
             emptyContent
         case .photos(let photos, let footer):
             ScrollView {
-                LazyVGrid(columns: columns(cellSide: cellSide), spacing: spacing) {
-                    Section {
-                        ForEach(photos) { photo in
-                            Button { onSelect(photo) } label: {
-                                PhotoCell(
-                                    photo: photo,
-                                    side: cellSide,
-                                    imageLoader: imageLoader,
-                                    transitionNamespace: transitionNamespace
-                                )
+                // The footer sits in a lazy stack on purpose: only lazy
+                // containers wait until a view nears the screen before
+                // calling `onAppear`.
+                LazyVStack(spacing: spacing) {
+                    HStack(alignment: .top, spacing: spacing) {
+                        ForEach(Array(layout.columns(for: photos).enumerated()), id: \.offset) { _, column in
+                            LazyVStack(spacing: spacing) {
+                                ForEach(column) { photo in
+                                    cell(for: photo, layout: layout)
+                                }
                             }
-                            .buttonStyle(PressableCellStyle())
-                            .onAppear { model.itemAppeared(photo.id) }
+                            .frame(width: layout.columnWidth)
                         }
-                    } footer: {
-                        // Inside the lazy grid on purpose: only lazy containers wait
-                        // until a view nears the screen before calling `onAppear`.
-                        PhotoGridFooter(
-                            footer: footer,
-                            cellSide: cellSide,
-                            spacing: spacing,
-                            loadMore: model.footerAppeared,
-                            retry: model.retry
-                        )
                     }
+                    PhotoGridFooter(
+                        footer: footer,
+                        layout: layout,
+                        loadMore: model.footerAppeared,
+                        retry: model.retry
+                    )
                 }
                 .padding(spacing)
             }
@@ -83,32 +78,52 @@ public struct PhotoGrid<EmptyContent: View>: View {
             .onChange(of: photos.count, initial: true) { oldCount, newCount in
                 let firstNew = oldCount < newCount ? oldCount : 0
                 imageLoader.prefetch(photos[firstNew...].compactMap {
-                    $0.gridImageRequest(side: cellSide, displayScale: displayScale)
+                    $0.gridImageRequest(size: layout.size(for: $0), displayScale: displayScale)
                 })
             }
         }
     }
 
-    private func placeholderGrid(cellSide: CGFloat) -> some View {
-        ScrollView {
-            LazyVGrid(columns: columns(cellSide: cellSide), spacing: spacing) {
-                ForEach(0..<12, id: \.self) { index in
-                    PlaceholderTile(side: cellSide, wave: index / 2 + index % 2)
+    private func cell(for photo: Photo, layout: MasonryLayout) -> some View {
+        Button { onSelect(photo) } label: {
+            PhotoCell(
+                photo: photo,
+                size: layout.size(for: photo),
+                imageLoader: imageLoader,
+                transitionNamespace: transitionNamespace
+            )
+        }
+        .buttonStyle(PressableCellStyle())
+        .onAppear { model.itemAppeared(photo.id) }
+    }
+
+    private func placeholderGrid(layout: MasonryLayout) -> some View {
+        HStack(alignment: .top, spacing: spacing) {
+            ForEach(0..<layout.columnCount, id: \.self) { column in
+                VStack(spacing: spacing) {
+                    ForEach(0..<5, id: \.self) { row in
+                        PlaceholderTile(
+                            size: placeholderSize(column: column, row: row, layout: layout),
+                            wave: row + column
+                        )
+                    }
                 }
             }
-            .padding(spacing)
         }
-        .scrollDisabled(true)
+        .padding(spacing)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .clipped()
         .accessibilityHidden(true)
     }
+}
 
-    private func columns(cellSide: CGFloat) -> [GridItem] {
-        Array(repeating: GridItem(.fixed(cellSide), spacing: spacing), count: 2)
-    }
+/// Heights for placeholder tiles, varied like real photos (portrait,
+/// landscape, square), offset per column so the columns don't line up.
+private let placeholderAspectRatios: [Double] = [0.75, 1.5, 1, 0.67, 1.33]
 
-    private func cellSide(forWidth width: CGFloat) -> CGFloat {
-        max(((width - spacing * 3) / 2).rounded(.down), 0)
-    }
+private func placeholderSize(column: Int, row: Int, layout: MasonryLayout) -> CGSize {
+    let ratio = placeholderAspectRatios[(row + column * 2) % placeholderAspectRatios.count]
+    return CGSize(width: layout.columnWidth, height: (layout.columnWidth / ratio).rounded())
 }
 
 /// The row below the photos. Each case is a distinct view, so when a load
@@ -116,8 +131,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
 /// the next page.
 private struct PhotoGridFooter: View {
     let footer: PhotoGridState.Footer
-    let cellSide: CGFloat
-    let spacing: CGFloat
+    let layout: MasonryLayout
     let loadMore: () -> Void
     let retry: () -> Void
 
@@ -129,9 +143,10 @@ private struct PhotoGridFooter: View {
                 .onAppear(perform: loadMore)
         case .loading:
             // The grid seems to continue while the next page loads.
-            HStack(spacing: spacing) {
-                PlaceholderTile(side: cellSide)
-                PlaceholderTile(side: cellSide, wave: 1)
+            HStack(alignment: .top, spacing: layout.spacing) {
+                ForEach(0..<layout.columnCount, id: \.self) { column in
+                    PlaceholderTile(size: placeholderSize(column: column, row: 0, layout: layout), wave: column)
+                }
             }
             .accessibilityHidden(true)
         case .failed(let error):
@@ -160,14 +175,13 @@ private struct PhotoGridFooter: View {
 /// Stands in for a photo cell while photos load. Tiles breathe, with
 /// `wave` (row + column) making the pulse travel diagonally across the grid.
 struct PlaceholderTile: View {
-    let side: CGFloat
+    let size: CGSize
     var wave = 0
 
     var body: some View {
         Rectangle()
-            .fill(.quaternary)
-            .clipShape(.tile)
-            .frame(width: side, height: side)
+            .fill(.tertiary)
+            .frame(width: size.width, height: size.height)
             .breathing(wave: wave)
     }
 }

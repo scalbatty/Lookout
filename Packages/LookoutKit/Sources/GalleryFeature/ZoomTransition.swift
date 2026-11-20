@@ -22,9 +22,7 @@ private struct ZoomSource: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 18, *), let namespace {
-            content.matchedTransitionSource(id: id, in: namespace) { source in
-                source.clipShape(.tile)
-            }
+            content.matchedTransitionSource(id: id, in: namespace)
         } else {
             content
         }

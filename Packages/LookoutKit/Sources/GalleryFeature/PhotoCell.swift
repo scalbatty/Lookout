@@ -2,7 +2,7 @@ import Domain
 import ImageLoading
 import SwiftUI
 
-/// A square grid cell: the photo cropped to fill, its caption, and a
+/// A grid cell: the photo filling the size the layout gives it, its caption, and a
 /// "Sponsored" badge when relevant.
 ///
 /// The image is loaded for the cell's exact pixel size, cancelled if the
@@ -10,8 +10,8 @@ import SwiftUI
 /// screen; the image loader's cache, not the cell, keeps images around.
 struct PhotoCell: View {
     let photo: Photo
-    /// The cell's side, in points. Given by the grid so cells don't measure themselves.
-    let side: CGFloat
+    /// The cell's size, in points. Given by the grid so cells don't measure themselves.
+    let size: CGSize
     let imageLoader: any ImageLoading
     /// Where the zoom transition to the full-screen photo starts, if any.
     var transitionNamespace: Namespace.ID?
@@ -22,7 +22,7 @@ struct PhotoCell: View {
     @State private var image: UIImage?
 
     private var imageRequest: ImageRequest? {
-        photo.gridImageRequest(side: side, displayScale: displayScale)
+        photo.gridImageRequest(size: size, displayScale: displayScale)
     }
 
     /// An image already in memory is shown in the cell's very first frame,
@@ -47,8 +47,8 @@ struct PhotoCell: View {
             .zoomTransitionSource(id: photo.id, in: transitionNamespace)
             .overlay(alignment: .bottomLeading) { caption }
             .overlay(alignment: .topLeading) { sponsoredBadge }
-            .frame(width: side, height: side)
-            .clipShape(.tile)
+            .frame(width: size.width, height: size.height)
+            .clipped()
             // Only images that arrive after the first frame fade in.
             .animation(.easeOut(duration: 0.2), value: displayedImage != nil)
             .task(id: imageRequest) { await loadImage() }
@@ -101,7 +101,7 @@ struct PhotoCell: View {
 #if DEBUG
 @MainActor
 private func previewCell(_ photo: Photo, loader: any ImageLoading = GeneratedImageLoader()) -> some View {
-    PhotoCell(photo: photo, side: 180, imageLoader: loader).padding()
+    PhotoCell(photo: photo, size: CGSize(width: 180, height: 240), imageLoader: loader).padding()
 }
 
 #Preview("Loaded") { previewCell(PreviewPhotos.landscape) }

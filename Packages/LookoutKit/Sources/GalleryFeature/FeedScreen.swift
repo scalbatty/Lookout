@@ -21,9 +21,30 @@ public struct FeedScreen: View {
         self.imageLoader = imageLoader
     }
 
+    private var isSearching: Bool { search.results != nil }
+
     public var body: some View {
         NavigationStack(path: $path) {
-            Group {
+            // The feed stays mounted under the results, so closing search
+            // returns to the same scroll position.
+            ZStack {
+                PhotoGrid(
+                    model: model,
+                    imageLoader: imageLoader,
+                    onSelect: { path.append($0) },
+                    // One zoom source per photo: the visible grid's.
+                    transitionNamespace: isSearching ? nil : zoomNamespace
+                ) {
+                    ContentUnavailableView {
+                        Label { Text(localized("feed.empty.title")) } icon: { Image(systemName: "photo.on.rectangle") }
+                    } description: {
+                        Text(localized("feed.empty.message"))
+                    }
+                }
+                .opacity(isSearching ? 0 : 1)
+                .allowsHitTesting(!isSearching)
+                .accessibilityHidden(isSearching)
+
                 if let results = search.results, let query = search.query {
                     PhotoGrid(
                         model: results,
@@ -37,19 +58,6 @@ public struct FeedScreen: View {
                     .id(query)
                     // Scrolling the results means reading, not typing.
                     .scrollDismissesKeyboard(.immediately)
-                } else {
-                    PhotoGrid(
-                        model: model,
-                        imageLoader: imageLoader,
-                        onSelect: { path.append($0) },
-                        transitionNamespace: zoomNamespace
-                    ) {
-                        ContentUnavailableView {
-                            Label { Text(localized("feed.empty.title")) } icon: { Image(systemName: "photo.on.rectangle") }
-                        } description: {
-                            Text(localized("feed.empty.message"))
-                        }
-                    }
                 }
             }
             .navigationTitle(Text(localized("feed.title")))

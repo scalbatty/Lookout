@@ -13,6 +13,8 @@ struct PhotoCell: View {
     /// The cell's side, in points. Given by the grid so cells don't measure themselves.
     let side: CGFloat
     let imageLoader: any ImageLoading
+    /// Where the zoom transition to the full-screen photo starts, if any.
+    var transitionNamespace: Namespace.ID?
 
     @Environment(\.displayScale) private var displayScale
     /// Holds the image while the cell is on screen, so it stays even if the
@@ -40,6 +42,9 @@ struct PhotoCell: View {
                         .transition(.opacity)
                 }
             }
+            // The zoom starts from the image alone: the caption and badge
+            // drawn over it don't exist on the full-screen side.
+            .zoomTransitionSource(id: photo.id, in: transitionNamespace)
             .overlay(alignment: .bottomLeading) { caption }
             .overlay(alignment: .topLeading) { sponsoredBadge }
             .frame(width: side, height: side)

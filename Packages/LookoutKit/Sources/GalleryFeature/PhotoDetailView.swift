@@ -11,6 +11,17 @@ struct PhotoDetailView: View {
     @Environment(\.displayScale) private var displayScale
     @State private var image: UIImage?
     @State private var showsChrome = true
+    /// Whatever was already in memory when the view was created (usually the
+    /// grid thumbnail). Taken once: looking it up on every render would swap
+    /// it for the full image as soon as that one is cached, under the
+    /// cross-fade, which shows as a flicker.
+    @State private var placeholder: UIImage?
+
+    init(photo: Photo, imageLoader: any ImageLoading) {
+        self.photo = photo
+        self.imageLoader = imageLoader
+        _placeholder = State(initialValue: imageLoader.largestCachedImage(forAnyOf: photo.variants.map(\.url)))
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -49,9 +60,8 @@ struct PhotoDetailView: View {
         Rectangle()
             .fill(.white.opacity(0.08))
             .overlay {
-                // Whatever is already in memory (usually the grid thumbnail)
-                // shows at once; the full image cross-fades over it.
-                if let placeholder = imageLoader.largestCachedImage(forAnyOf: photo.variants.map(\.url)) {
+                // Shown at once; the full image cross-fades over it.
+                if let placeholder {
                     Image(uiImage: placeholder)
                         .resizable()
                         .scaledToFill()

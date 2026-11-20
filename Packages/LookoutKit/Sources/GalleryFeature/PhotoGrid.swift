@@ -52,8 +52,12 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     Section {
                         ForEach(photos) { photo in
                             Button { onSelect(photo) } label: {
-                                PhotoCell(photo: photo, side: cellSide, imageLoader: imageLoader)
-                                    .zoomTransitionSource(id: photo.id, in: transitionNamespace)
+                                PhotoCell(
+                                    photo: photo,
+                                    side: cellSide,
+                                    imageLoader: imageLoader,
+                                    transitionNamespace: transitionNamespace
+                                )
                             }
                             .buttonStyle(PressableCellStyle())
                             .onAppear { model.itemAppeared(photo.id) }

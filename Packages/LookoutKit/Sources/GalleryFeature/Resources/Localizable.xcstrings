@@ -145,18 +145,6 @@
         }
       }
     },
-    "feed.header.searching %@" : {
-      "comment" : "Kicker under the feed's wordmark while showing search results. The argument is the search text.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Results for “%@”"
-          }
-        }
-      }
-    },
     "feed.title" : {
       "comment" : "Wordmark at the top of the editorial feed.",
       "extractionState" : "manual",

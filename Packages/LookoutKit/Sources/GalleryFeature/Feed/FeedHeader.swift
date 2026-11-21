@@ -1,17 +1,13 @@
 import SwiftUI
 
-/// The feed's masthead: a serif wordmark over a small-caps kicker that
-/// names what the grid is showing — the editorial feed, or a search.
+/// The feed's masthead: a serif wordmark over a small-caps kicker.
 ///
 /// Sits on a material that fades into the photos scrolling under it.
 struct FeedHeader: View {
-    /// The search being shown, or `nil` for the editorial feed.
-    var query: String?
     /// Shows a search button when set; used where search has no
     /// system entry point of its own (before iOS 26).
     var onSearch: (() -> Void)?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsAbout = false
 
     var body: some View {
@@ -20,12 +16,11 @@ struct FeedHeader: View {
                 Text(localized("feed.title"))
                     .font(.system(.largeTitle, design: .serif, weight: .bold))
                     .accessibilityAddTraits(.isHeader)
-                kicker
+                Text(localized("feed.header.editorial"))
                     .font(.caption.weight(.semibold).smallCaps())
                     .tracking(1.2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .contentTransition(.opacity)
             }
             Spacer(minLength: 12)
             headerButton(localized("about.button"), systemImage: "info.circle") { showsAbout = true }
@@ -45,7 +40,6 @@ struct FeedHeader: View {
                 }
                 .ignoresSafeArea(edges: .top)
         }
-        .animation(reduceMotion ? nil : .smooth, value: query)
         .accessibilityElement(children: .contain)
         .sheet(isPresented: $showsAbout) {
             AboutView()
@@ -63,14 +57,6 @@ struct FeedHeader: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-    }
-
-    private var kicker: Text {
-        if let query {
-            Text(localized("feed.header.searching \(query)"))
-        } else {
-            Text(localized("feed.header.editorial"))
-        }
     }
 }
 
@@ -90,8 +76,8 @@ extension Color {
         .background(Color.paper)
 }
 
-#Preview("Searching, with button") {
-    FeedHeader(query: "mountains", onSearch: {})
+#Preview("With search button") {
+    FeedHeader(onSearch: {})
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Color.paper)
 }

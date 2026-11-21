@@ -135,19 +135,14 @@ struct ZoomableImageView: UIViewRepresentable {
         }
 
         @objc func doubleTapped(_ recognizer: UITapGestureRecognizer) {
-            guard let scrollView = recognizer.view as? UIScrollView else { return }
+            guard let scrollView = recognizer.view as? CenteringScrollView else { return }
             let animated = !UIAccessibility.isReduceMotionEnabled
             if scrollView.zoomScale > scrollView.minimumZoomScale {
-                scrollView.setZoomScale(scrollView.minimumZoomScale, animated: animated)
-                return
+                scrollView.zoom(to: scrollView.minimumZoomScale, centeredOn: nil, animated: animated)
+            } else {
+                let scale = min(ZoomableImageView.doubleTapZoomScale, scrollView.maximumZoomScale)
+                scrollView.zoom(to: scale, centeredOn: recognizer.location(in: imageView), animated: animated)
             }
-            // Zoom into a rect centred on the tapped point (clamped to the
-            // content's edges by the scroll view).
-            let point = recognizer.location(in: imageView)
-            let scale = min(ZoomableImageView.doubleTapZoomScale, scrollView.maximumZoomScale)
-            let size = CGSize(width: scrollView.bounds.width / scale, height: scrollView.bounds.height / scale)
-            let rect = CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2, width: size.width, height: size.height)
-            scrollView.zoom(to: rect, animated: animated)
         }
     }
 }
@@ -161,11 +156,40 @@ private final class CenteringScrollView: UIScrollView {
         // centre as if at that limit: the content then stays under the
         // fingers and the bounce back shrinks it in place, instead of
         // jumping to the middle first.
-        let scale = min(max(zoomScale, minimumZoomScale), maximumZoomScale) / zoomScale
-        let horizontal = max(0, (bounds.width - contentSize.width * scale) / 2)
-        let vertical = max(0, (bounds.height - contentSize.height * scale) / 2)
-        let inset = UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
+        let inset = centeringInset(at: min(max(zoomScale, minimumZoomScale), maximumZoomScale))
         if contentInset != inset { contentInset = inset }
+    }
+
+    /// The inset that centres the content at `scale`.
+    private func centeringInset(at scale: CGFloat) -> UIEdgeInsets {
+        let unscaled = CGSize(width: contentSize.width / zoomScale, height: contentSize.height / zoomScale)
+        let horizontal = max(0, (bounds.width - unscaled.width * scale) / 2)
+        let vertical = max(0, (bounds.height - unscaled.height * scale) / 2)
+        return UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
+    }
+
+    /// Zooms to `scale`, with `point` (in the unzoomed content) as near the
+    /// middle as the edges allow. Scale, inset and offset animate together:
+    /// `zoom(to:animated:)` jumps the inset to its final value first, which
+    /// shows as the image jumping before it zooms.
+    func zoom(to scale: CGFloat, centeredOn point: CGPoint?, animated: Bool) {
+        let inset = centeringInset(at: scale)
+        let size = CGSize(width: contentSize.width / zoomScale * scale, height: contentSize.height / zoomScale * scale)
+        let target = point ?? CGPoint(x: contentSize.width / zoomScale / 2, y: contentSize.height / zoomScale / 2)
+        let offset = CGPoint(
+            x: min(max(target.x * scale - bounds.width / 2, -inset.left), size.width - bounds.width + inset.right),
+            y: min(max(target.y * scale - bounds.height / 2, -inset.top), size.height - bounds.height + inset.bottom)
+        )
+        let changes = {
+            self.zoomScale = scale
+            self.contentInset = inset
+            self.contentOffset = offset
+        }
+        if animated {
+            UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0, animations: changes)
+        } else {
+            changes()
+        }
     }
 }
 

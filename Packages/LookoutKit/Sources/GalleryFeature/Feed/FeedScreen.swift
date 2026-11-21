@@ -11,9 +11,8 @@ public struct FeedScreen: View {
     @State private var search: SearchModel
     @State private var searchText = ""
     @State private var isSearchPresented = false
-    /// How far each grid has scrolled from its top; the header scrolls away with it.
+    /// How far the feed has scrolled from its top; the header scrolls away with it.
     @State private var feedScroll: CGFloat = 0
-    @State private var resultsScroll: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var path: [Photo] = []
     /// The grid the shown photo was opened from, whose photos it pages through.
@@ -44,15 +43,27 @@ public struct FeedScreen: View {
 
     /// Opens a photo full screen. The search field loses focus first: left
     /// focused, the system focuses it again, keyboard included, on the way back.
+    /// Search is also closed (its results stay), one update before the push:
+    /// still active, it keeps the system bar shown over the full-screen view.
     private func open(_ photo: Photo, in grid: PhotoGridModel) {
         openedGrid = grid
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        path.append(photo)
+        isSearchPresented = false
+        Task { path.append(photo) }
     }
 
     /// How far the masthead has scrolled away, from 0 to its height.
     private var headerScroll: CGFloat {
-        min(max(isSearching ? resultsScroll : feedScroll, 0), headerHeight)
+        min(max(feedScroll, 0), headerHeight)
+    }
+
+    private var masthead: some View {
+        FeedHeader(onSearch: searchButtonAction)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+            // Moves up exactly as far as the content, until it's gone,
+            // fading out so it never sits under the status bar.
+            .offset(y: -headerScroll)
+            .opacity(headerHeight > 0 ? 1 - headerScroll / headerHeight : 1)
     }
 
     public var body: some View {
@@ -88,20 +99,16 @@ public struct FeedScreen: View {
                         ContentUnavailableView.search(text: query.text)
                     }
                     // A new query starts at the top, with a fresh grid.
-                    .trackingScrollOffset($resultsScroll)
                     .id(query)
                     // Scrolling the results means reading, not typing.
                     .scrollDismissesKeyboard(.immediately)
                 }
             }
             .background(Color.paper)
+            // Search results go without the masthead: the search field
+            // already says what they are.
             .safeAreaInset(edge: .top, spacing: 0) {
-                FeedHeader(query: search.query?.text, onSearch: searchButtonAction)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
-                    // Moves up exactly as far as the content, until it's gone,
-                    // fading out so it never sits under the status bar.
-                    .offset(y: -headerScroll)
-                    .opacity(headerHeight > 0 ? 1 - headerScroll / headerHeight : 1)
+                if !isSearching { masthead }
             }
             // Photos scroll on under the notch; a short fade from the page
             // colour keeps the clock and battery readable over bright ones.

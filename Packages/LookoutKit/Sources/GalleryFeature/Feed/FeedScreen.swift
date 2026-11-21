@@ -11,9 +11,6 @@ public struct FeedScreen: View {
     @State private var search: SearchModel
     @State private var searchText = ""
     @State private var isSearchPresented = false
-    /// How far the feed has scrolled from its top; the header scrolls away with it.
-    @State private var feedScroll: CGFloat = 0
-    @State private var headerHeight: CGFloat = 0
     @State private var path: [Photo] = []
     /// The grid the shown photo was opened from, whose photos it pages through.
     @State private var openedGrid: PhotoGridModel?
@@ -52,20 +49,6 @@ public struct FeedScreen: View {
         Task { path.append(photo) }
     }
 
-    /// How far the masthead has scrolled away, from 0 to its height.
-    private var headerScroll: CGFloat {
-        min(max(feedScroll, 0), headerHeight)
-    }
-
-    private var masthead: some View {
-        FeedHeader(onSearch: searchButtonAction)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
-            // Moves up exactly as far as the content, until it's gone,
-            // fading out so it never sits under the status bar.
-            .offset(y: -headerScroll)
-            .opacity(headerHeight > 0 ? 1 - headerScroll / headerHeight : 1)
-    }
-
     public var body: some View {
         NavigationStack(path: $path) {
             // The feed stays mounted under the results, so closing search
@@ -78,13 +61,16 @@ public struct FeedScreen: View {
                     // One zoom source per photo: the visible grid's.
                     transitionNamespace: isSearching ? nil : zoomNamespace
                 ) {
+                    // Scrolls away with the photos. Search results go without
+                    // it: the search field already says what they are.
+                    FeedHeader(onSearch: searchButtonAction)
+                } emptyContent: {
                     ContentUnavailableView {
                         Label { Text(localized("feed.empty.title")) } icon: { Image(systemName: "photo.on.rectangle") }
                     } description: {
                         Text(localized("feed.empty.message"))
                     }
                 }
-                .trackingScrollOffset($feedScroll)
                 .opacity(isSearching ? 0 : 1)
                 .allowsHitTesting(!isSearching)
                 .accessibilityHidden(isSearching)
@@ -105,11 +91,6 @@ public struct FeedScreen: View {
                 }
             }
             .background(Color.paper)
-            // Search results go without the masthead: the search field
-            // already says what they are.
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if !isSearching { masthead }
-            }
             // Photos scroll on under the notch; a short fade from the page
             // colour keeps the clock and battery readable over bright ones.
             .overlay(alignment: .top) {
@@ -139,22 +120,6 @@ public struct FeedScreen: View {
         // Dark only: photos read best on a dark page, and the zoom into the
         // black full-screen view doesn't flash from a light background.
         .preferredColorScheme(.dark)
-    }
-}
-
-private extension View {
-    /// Reports how far the scroll view inside has moved from its top.
-    /// Before iOS 18 there's no way to read it from outside, so the
-    /// header stays put.
-    @ViewBuilder
-    func trackingScrollOffset(_ offset: Binding<CGFloat>) -> some View {
-        if #available(iOS 18, *) {
-            onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, new in
-                offset.wrappedValue = new
-            }
-        } else {
-            self
-        }
     }
 }
 

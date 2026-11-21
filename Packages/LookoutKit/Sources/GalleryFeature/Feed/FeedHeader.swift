@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The feed's masthead: a serif wordmark over a small-caps kicker.
 ///
-/// Sits on a material that fades into the photos scrolling under it.
+/// Sits at the top of the grid and scrolls away with it.
 struct FeedHeader: View {
     /// Shows a search button when set; used where search has no
     /// system entry point of its own (before iOS 26).
@@ -32,14 +32,6 @@ struct FeedHeader: View {
         .padding(.top, 20)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            Rectangle()
-                .fill(Color.paper)
-                .mask {
-                    LinearGradient(stops: [.init(color: .black, location: 0.7), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
-                }
-                .ignoresSafeArea(edges: .top)
-        }
         .accessibilityElement(children: .contain)
         .sheet(isPresented: $showsAbout) {
             AboutView()

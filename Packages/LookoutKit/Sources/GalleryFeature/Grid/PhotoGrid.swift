@@ -4,11 +4,15 @@ import SwiftUI
 
 /// A masonry grid of photos (2 or 3 columns) with endless scrolling. Shared by the feed and
 /// search: what it shows comes entirely from its model.
-public struct PhotoGrid<EmptyContent: View>: View {
+///
+/// `header` sits above the photos and scrolls away with them; it also tops
+/// the loading, error and empty states, so it's there from the start.
+public struct PhotoGrid<Header: View, EmptyContent: View>: View {
     private let model: PhotoGridModel
     private let imageLoader: any ImageLoading
     private let onSelect: (Photo) -> Void
     private let transitionNamespace: Namespace.ID?
+    private let header: Header
     private let emptyContent: EmptyContent
 
     private let spacing: CGFloat = 8
@@ -22,12 +26,14 @@ public struct PhotoGrid<EmptyContent: View>: View {
         imageLoader: any ImageLoading,
         onSelect: @escaping (Photo) -> Void,
         transitionNamespace: Namespace.ID? = nil,
+        @ViewBuilder header: () -> Header,
         @ViewBuilder emptyContent: () -> EmptyContent
     ) {
         self.model = model
         self.imageLoader = imageLoader
         self.onSelect = onSelect
         self.transitionNamespace = transitionNamespace
+        self.header = header()
         self.emptyContent = emptyContent()
     }
 
@@ -43,50 +49,63 @@ public struct PhotoGrid<EmptyContent: View>: View {
     private func content(layout: MasonryLayout) -> some View {
         switch model.state {
         case .loading:
-            placeholderGrid(layout: layout)
+            VStack(spacing: 0) {
+                header
+                placeholderGrid(layout: layout)
+            }
         case .failed(let error):
-            PhotoGridErrorView(error: error, retry: model.retry)
+            VStack(spacing: 0) {
+                header
+                PhotoGridErrorView(error: error, retry: model.retry)
+            }
         case .empty:
-            emptyContent
+            VStack(spacing: 0) {
+                header
+                emptyContent
+                    .frame(maxHeight: .infinity)
+            }
         case .photos(let photos, let footer):
             ScrollViewReader { scroller in
                 ScrollView {
-                    // The footer sits in a lazy stack on purpose: only lazy
-                    // containers wait until a view nears the screen before
-                    // calling `onAppear`.
-                    LazyVStack(spacing: spacing) {
-                        let arrangement = layout.arrange(photos)
-                        let placeholders: [[CGFloat]] = if case .loading = footer {
-                            placeholderHeights(below: arrangement.heights, rows: nextPagePlaceholderCount, layout: layout)
-                        } else {
-                            Array(repeating: [], count: layout.columnCount)
-                        }
-                        HStack(alignment: .top, spacing: spacing) {
-                            ForEach(Array(arrangement.columns.enumerated()), id: \.offset) { columnIndex, column in
-                                LazyVStack(spacing: spacing) {
-                                    ForEach(Array(column.enumerated()), id: \.element.id) { row, photo in
-                                        cell(for: photo, layout: layout, wave: row + columnIndex)
-                                    }
-                                    // While the next page loads, each column carries on
-                                    // right under its own last photo, all ending level.
-                                    ForEach(Array(placeholders[columnIndex].enumerated()), id: \.offset) { index, height in
-                                        PlaceholderTile(
-                                            size: CGSize(width: layout.columnWidth, height: height),
-                                            wave: index + columnIndex
-                                        )
-                                        .accessibilityHidden(true)
-                                    }
-                                }
-                                .frame(width: layout.columnWidth)
+                    VStack(spacing: 0) {
+                        header
+                        // The footer sits in a lazy stack on purpose: only lazy
+                        // containers wait until a view nears the screen before
+                        // calling `onAppear`.
+                        LazyVStack(spacing: spacing) {
+                            let arrangement = layout.arrange(photos)
+                            let placeholders: [[CGFloat]] = if case .loading = footer {
+                                placeholderHeights(below: arrangement.heights, rows: nextPagePlaceholderCount, layout: layout)
+                            } else {
+                                Array(repeating: [], count: layout.columnCount)
                             }
+                            HStack(alignment: .top, spacing: spacing) {
+                                ForEach(Array(arrangement.columns.enumerated()), id: \.offset) { columnIndex, column in
+                                    LazyVStack(spacing: spacing) {
+                                        ForEach(Array(column.enumerated()), id: \.element.id) { row, photo in
+                                            cell(for: photo, layout: layout, wave: row + columnIndex)
+                                        }
+                                        // While the next page loads, each column carries on
+                                        // right under its own last photo, all ending level.
+                                        ForEach(Array(placeholders[columnIndex].enumerated()), id: \.offset) { index, height in
+                                            PlaceholderTile(
+                                                size: CGSize(width: layout.columnWidth, height: height),
+                                                wave: index + columnIndex
+                                            )
+                                            .accessibilityHidden(true)
+                                        }
+                                    }
+                                    .frame(width: layout.columnWidth)
+                                }
+                            }
+                            PhotoGridFooter(
+                                footer: footer,
+                                loadMore: model.footerAppeared,
+                                retry: model.retry
+                            )
                         }
-                        PhotoGridFooter(
-                            footer: footer,
-                            loadMore: model.footerAppeared,
-                            retry: model.retry
-                        )
+                        .padding(spacing)
                     }
-                    .padding(spacing)
                 }
                 .scrollIndicators(.hidden)
                 // Follows the photo shown full screen, out of sight under it, so
@@ -167,6 +186,26 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+extension PhotoGrid where Header == EmptyView {
+    /// A grid with no header.
+    public init(
+        model: PhotoGridModel,
+        imageLoader: any ImageLoading,
+        onSelect: @escaping (Photo) -> Void,
+        transitionNamespace: Namespace.ID? = nil,
+        @ViewBuilder emptyContent: () -> EmptyContent
+    ) {
+        self.init(
+            model: model,
+            imageLoader: imageLoader,
+            onSelect: onSelect,
+            transitionNamespace: transitionNamespace,
+            header: { EmptyView() },
+            emptyContent: emptyContent
+        )
     }
 }
 

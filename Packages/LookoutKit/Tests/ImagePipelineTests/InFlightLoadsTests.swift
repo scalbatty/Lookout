@@ -125,6 +125,26 @@ struct InFlightLoadsTests {
         #expect(await cancelled.value == 0)
     }
 
+    @Test func eachLastWaiterLeavingGetsTheFullGracePeriod() async throws {
+        let (gate, finished, cancelled) = (Gate(), Counter(), Counter())
+        let loads = gatedLoads(gate: gate, finished: finished, cancelled: cancelled, grace: .milliseconds(300))
+
+        let first = Task { try await loads.image(for: request) }
+        await waitUntil { loads.count == 1 }
+        first.cancel()
+        try await Task.sleep(for: .milliseconds(150))
+        let second = Task { try await loads.image(for: request) }
+        try await Task.sleep(for: .milliseconds(50))
+        second.cancel()
+        // Past the first grace period, within the second.
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(loads.count == 1)
+
+        await waitUntil { loads.count == 0 }
+        await gate.open()
+        await waitUntil { await cancelled.value == 1 }
+    }
+
     @Test func requestAfterACancelledLoadStartsAfresh() async throws {
         let (gate, finished, cancelled) = (Gate(), Counter(), Counter())
         let loads = gatedLoads(gate: gate, finished: finished, cancelled: cancelled)

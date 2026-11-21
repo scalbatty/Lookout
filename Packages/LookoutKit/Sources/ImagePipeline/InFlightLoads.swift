@@ -24,6 +24,9 @@ final class InFlightLoads: Sendable {
         var waiters = 0
         /// Started or joined by a preload: never cancelled.
         var isPinned = false
+        /// Bumped each time the last waiter leaves, so only the latest
+        /// grace period can cancel the load.
+        var abandonments = 0
     }
 
     // Not `Mutex` (Synchronization): it requires iOS 18, and we support iOS 17.
@@ -94,21 +97,30 @@ final class InFlightLoads: Sendable {
             return !hasLeft
         }
         guard isFirstLeave else { return }
-        entries.withLock { entries in
-            guard var entry = entries[request], entry.id == id else { return }
+        // Only when nobody waits any more does a grace period start; a
+        // later one supersedes it.
+        let abandonment: Int? = entries.withLock { entries in
+            guard var entry = entries[request], entry.id == id else { return nil }
             entry.waiters -= 1
+            guard entry.waiters == 0, !entry.isPinned else {
+                entries[request] = entry
+                return nil
+            }
+            entry.abandonments += 1
             entries[request] = entry
+            return entry.abandonments
         }
+        guard let abandonment else { return }
         Task { [grace] in
             try? await Task.sleep(for: grace)
-            cancelIfAbandoned(request, id: id)
+            cancelIfAbandoned(request, id: id, abandonment: abandonment)
         }
     }
 
     /// Cancels the load if nobody has joined it since its last caller left.
-    private func cancelIfAbandoned(_ request: ImageRequest, id: UUID) {
+    private func cancelIfAbandoned(_ request: ImageRequest, id: UUID, abandonment: Int) {
         entries.withLock { entries in
-            guard let entry = entries[request], entry.id == id,
+            guard let entry = entries[request], entry.id == id, entry.abandonments == abandonment,
                   entry.waiters == 0, !entry.isPinned else { return }
             entry.task.cancel()
             // A new request for the same image starts afresh.

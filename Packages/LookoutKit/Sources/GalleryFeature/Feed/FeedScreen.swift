@@ -40,13 +40,10 @@ public struct FeedScreen: View {
 
     /// Opens a photo full screen. The search field loses focus first: left
     /// focused, the system focuses it again, keyboard included, on the way back.
-    /// Search is also closed (its results stay), one update before the push:
-    /// still active, it keeps the system bar shown over the full-screen view.
     private func open(_ photo: Photo, in grid: PhotoGridModel) {
         openedGrid = grid
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        isSearchPresented = false
-        Task { path.append(photo) }
+        path.append(photo)
     }
 
     public var body: some View {

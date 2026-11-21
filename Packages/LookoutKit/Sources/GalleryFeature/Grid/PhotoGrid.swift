@@ -88,6 +88,7 @@ public struct PhotoGrid<EmptyContent: View>: View {
                     }
                     .padding(spacing)
                 }
+                .scrollIndicators(.hidden)
                 // Follows the photo shown full screen, out of sight under it, so
                 // its cell is there for the zoom back.
                 .onChange(of: model.shownPhotoID) { _, id in

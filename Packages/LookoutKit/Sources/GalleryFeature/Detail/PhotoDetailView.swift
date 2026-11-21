@@ -17,15 +17,12 @@ struct PhotoDetailView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.dismiss) private var dismiss
     @State private var photo: Photo
     @State private var showsChrome = true
     /// How far the current photo follows a vertical pan.
     @State private var dragOffset: CGFloat = 0
     /// +1 when moving to the next photo, -1 to the previous one.
     @State private var direction = 1
-    /// The top safe area where the buttons sit.
-    @State private var topInset: CGFloat = 0
 
     init(photo: Photo, grid: PhotoGridModel, imageLoader: any ImageLoading, transitionNamespace: Namespace.ID? = nil) {
         _photo = State(initialValue: photo)
@@ -95,16 +92,12 @@ struct PhotoDetailView: View {
                     .transition(.opacity)
             }
         }
-        // Our own buttons rather than the navigation bar's, so they fade
-        // with the caption instead of sliding off screen. The hidden bar
-        // keeps the system swipe back.
-        .overlay(alignment: .top) {
-            if showsChrome {
-                buttons.transition(.opacity)
-            }
+        // In the system bar, which places itself: at the top, or in the
+        // side bar where the device has one (an iPhone Duo's outer screen).
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) { pagingButtons }
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .background(NavigationBarHider())
+        .toolbar(showsChrome ? .visible : .hidden, for: .navigationBar)
         .statusBarHidden(!showsChrome)
         .zoomTransitionDestination(id: photo.id, in: transitionNamespace)
         // Lets the grid keep this photo in view, and load its next page as
@@ -152,37 +145,16 @@ struct PhotoDetailView: View {
         }
     }
 
-    private var buttons: some View {
-        HStack {
-            Button { dismiss() } label: {
-                Label { Text(localized("detail.back")) } icon: { Image(systemName: "chevron.backward") }
-                    .frame(width: 44, height: 44)
-            }
-            .chromeBackground(in: .circle)
-            Spacer()
-            HStack(spacing: 0) {
-                Button { show(-1) } label: {
-                    Label { Text(localized("detail.previous")) } icon: { Image(systemName: "chevron.up") }
-                        .frame(width: 44, height: 44)
-                }
-                .disabled(neighbour(-1) == nil)
-                Button { show(1) } label: {
-                    Label { Text(localized("detail.next")) } icon: { Image(systemName: "chevron.down") }
-                        .frame(width: 44, height: 44)
-                }
-                .disabled(neighbour(1) == nil)
-            }
-            .padding(.horizontal, 4)
-            .chromeBackground(in: .capsule)
+    @ViewBuilder
+    private var pagingButtons: some View {
+        Button { show(-1) } label: {
+            Label { Text(localized("detail.previous")) } icon: { Image(systemName: "chevron.up") }
         }
-        .labelStyle(.iconOnly)
-        .font(.body.weight(.medium))
-        .foregroundStyle(.white)
-        .padding(.horizontal, 16)
-        // Just under the status bar; at least 16 pt from the edge where
-        // there's no top inset (an open iPhone Duo puts it on the side).
-        .padding(.top, topInset < 12 ? 16 - topInset : 4)
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        .disabled(neighbour(-1) == nil)
+        Button { show(1) } label: {
+            Label { Text(localized("detail.next")) } icon: { Image(systemName: "chevron.down") }
+        }
+        .disabled(neighbour(1) == nil)
     }
 
     private var caption: some View {
@@ -208,34 +180,6 @@ struct PhotoDetailView: View {
         .background(alignment: .bottom) {
             LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
-        }
-    }
-}
-
-/// Hides the navigation bar from UIKit. Opened from search results, the
-/// still-active search keeps the bar shown despite `.toolbar(.hidden)`,
-/// adding a second back button and pushing ours down.
-private struct NavigationBarHider: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> Controller { Controller() }
-    func updateUIViewController(_ controller: Controller, context: Context) {}
-
-    final class Controller: UIViewController {
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            navigationController?.setNavigationBarHidden(true, animated: animated)
-        }
-    }
-}
-
-private extension View {
-    /// Glass behind the full-screen view's buttons, as the navigation bar
-    /// draws them; a material before iOS 26.
-    @ViewBuilder
-    func chromeBackground(in shape: some Shape) -> some View {
-        if #available(iOS 26, *) {
-            glassEffect(.regular.interactive(), in: shape)
-        } else {
-            background(.ultraThinMaterial, in: shape)
         }
     }
 }
